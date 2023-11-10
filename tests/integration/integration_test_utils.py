@@ -12,6 +12,7 @@ from matlab_proxy.settings import get_process_startup_timeout
 
 MATLAB_STARTUP_TIMEOUT = get_process_startup_timeout()
 
+
 def perform_basic_checks():
     """
     Perform basic checks for the prerequisites for starting
