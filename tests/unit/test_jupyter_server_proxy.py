@@ -6,6 +6,7 @@ from pathlib import Path
 
 import matlab_proxy
 from matlab_proxy.util.mwi import environment_variables as mwi_env
+from matlab_proxy.settings import get_process_startup_timeout
 
 import jupyter_matlab_proxy
 from jupyter_matlab_proxy.jupyter_config import config
@@ -71,7 +72,7 @@ def test_setup_matlab(monkeypatch):
             "--config",
             config["extension_name"],
         ],
-        "timeout": 100,
+        "timeout": get_process_startup_timeout(),
         "environment": jupyter_matlab_proxy._get_env,
         "absolute_url": True,
         "launcher_entry": {
@@ -106,7 +107,7 @@ def test_setup_matlab_with_token_auth_disabled(monkeypatch):
             "--config",
             config["extension_name"],
         ],
-        "timeout": 100,
+        "timeout": get_process_startup_timeout(),
         "environment": jupyter_matlab_proxy._get_env,
         "absolute_url": True,
         "launcher_entry": {

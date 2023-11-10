@@ -6,6 +6,8 @@ import integration_test_utils
 import pytest
 import requests
 
+from matlab_proxy.settings import get_process_startup_timeout
+
 
 @pytest.fixture(autouse=True, scope="module")
 def matlab_proxy_fixture(module_monkeypatch):
@@ -50,7 +52,7 @@ def matlab_proxy_fixture(module_monkeypatch):
     integration_test_utils.poll_web_service(
         matlab_proxy_url,
         step=5,
-        timeout=120,
+        timeout=get_process_startup_timeout(),
         ignore_exceptions=(
             requests.exceptions.ConnectionError,
             requests.exceptions.SSLError,
