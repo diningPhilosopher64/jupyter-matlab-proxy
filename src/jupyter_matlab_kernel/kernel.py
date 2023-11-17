@@ -13,11 +13,11 @@ import requests
 from requests.exceptions import HTTPError
 
 from jupyter_matlab_kernel import mwi_comm_helpers
-from matlab_proxy.util import system
-from matlab_proxy.settings import get_process_startup_timeout
+from matlab_proxy import util as mwi_util
+from matlab_proxy import settings as mwi_settings
 
 
-MATLAB_STARTUP_TIMEOUT = get_process_startup_timeout()
+MATLAB_STARTUP_TIMEOUT = mwi_settings.get_process_startup_timeout()
 
 
 class MATLABConnectionError(Exception):
@@ -147,7 +147,7 @@ def start_matlab_proxy():
     # Thus we need to go one level higher to acquire the process id of the jupyter server.
     # Note: conda environments do not require this, and for these environments sys.prefix == sys.base_prefix
     is_virtual_env = sys.prefix != sys.base_prefix
-    if system.is_windows() and is_virtual_env:
+    if mwi_util.system.is_windows() and is_virtual_env:
         jupyter_server_pid = psutil.Process(jupyter_server_pid).ppid()
 
     nb_server = dict()

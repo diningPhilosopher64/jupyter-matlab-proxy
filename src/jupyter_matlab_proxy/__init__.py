@@ -78,7 +78,7 @@ def setup_matlab():
 
     import matlab_proxy
     from matlab_proxy.util.mwi import logger as mwi_logger
-    from matlab_proxy.settings import get_process_startup_timeout
+    from matlab_proxy import settings as mwi_settings
 
     logger = mwi_logger.get(init=True)
     logger.info("Initializing Jupyter MATLAB Proxy")
@@ -94,7 +94,7 @@ def setup_matlab():
             "--config",
             config["extension_name"],
         ],
-        "timeout": get_process_startup_timeout(),
+        "timeout": 100,
         "environment": _get_env,
         "absolute_url": True,
         "launcher_entry": {"title": "Open MATLAB", "icon_path": icon_path},
