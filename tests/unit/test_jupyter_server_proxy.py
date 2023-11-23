@@ -6,7 +6,6 @@ from pathlib import Path
 
 import matlab_proxy
 from matlab_proxy.util.mwi import environment_variables as mwi_env
-from matlab_proxy.settings import get_process_startup_timeout
 
 import jupyter_matlab_proxy
 from jupyter_matlab_proxy.jupyter_config import config
@@ -56,7 +55,7 @@ def test_get_env_with_token_auth_disabled(monkeypatch):
     assert r.get(mwi_env.get_env_name_mwi_auth_token()) == None
 
 
-def test_setup_matlab(monkeypatch):
+def test_setup_matlab():
     """Tests for a valid Server Process Configuration Dictionary
 
     This test checks if the jupyter proxy returns the expected Server Process Configuration
@@ -72,7 +71,7 @@ def test_setup_matlab(monkeypatch):
             "--config",
             config["extension_name"],
         ],
-        "timeout": get_process_startup_timeout(),
+        "timeout": 100,
         "environment": jupyter_matlab_proxy._get_env,
         "absolute_url": True,
         "launcher_entry": {
@@ -107,7 +106,7 @@ def test_setup_matlab_with_token_auth_disabled(monkeypatch):
             "--config",
             config["extension_name"],
         ],
-        "timeout": get_process_startup_timeout(),
+        "timeout": 100,
         "environment": jupyter_matlab_proxy._get_env,
         "absolute_url": True,
         "launcher_entry": {
