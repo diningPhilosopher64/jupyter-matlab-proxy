@@ -17,7 +17,7 @@ from matlab_proxy import util as mwi_util
 from matlab_proxy import settings as mwi_settings
 
 
-MATLAB_STARTUP_TIMEOUT = mwi_settings.get_process_startup_timeout()
+_MATLAB_STARTUP_TIMEOUT = mwi_settings.get_process_startup_timeout()
 
 
 class MATLABConnectionError(Exception):
@@ -472,7 +472,7 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
         timeout = 0
         while (
             self.matlab_status != "up"
-            and timeout != MATLAB_STARTUP_TIMEOUT
+            and timeout != _MATLAB_STARTUP_TIMEOUT
             and not self.matlab_proxy_has_error
         ):
             if self.is_matlab_licensed:
@@ -500,7 +500,7 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
         # If MATLAB is not available after 15 seconds of licensing information
         # being available either through user input or through matlab-proxy cache,
         # then display connection error to the user.
-        if timeout == MATLAB_STARTUP_TIMEOUT or self.matlab_proxy_has_error:
+        if timeout == _MATLAB_STARTUP_TIMEOUT or self.matlab_proxy_has_error:
             raise MATLABConnectionError
 
     def display_output(self, out):
