@@ -9,7 +9,7 @@ from logging import Logger
 import matlab_proxy_manager.lib.api as mpm_lib
 from requests.exceptions import HTTPError
 
-from jupyter_matlab_kernel import base_kernel as base
+from . import base_kernel as base
 from jupyter_matlab_kernel.mwi_comm_helpers import MWICommHelper
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
 
@@ -55,7 +55,7 @@ class MATLABKernelUsingMPM(base.BaseMATLABKernel):
         # matlab proxy and sets the attributes on kernel to talk to the correct backend.
         if not self.is_matlab_assigned:
             self.log.debug("Starting matlab-proxy")
-            await self._start_matlab_proxy_and_comm_helper()
+            await self.start_matlab_proxy_and_comm_helper()
             self.is_matlab_assigned = True
 
         return await super().do_execute(
@@ -98,7 +98,7 @@ class MATLABKernelUsingMPM(base.BaseMATLABKernel):
 
     # Helper functions
 
-    async def _start_matlab_proxy_and_comm_helper(self) -> None:
+    async def start_matlab_proxy_and_comm_helper(self) -> None:
         """
         Starts the MATLAB proxy using the proxy manager and fetches its status.
         """

@@ -13,7 +13,7 @@ import aiohttp
 import aiohttp.client_exceptions
 import requests
 
-from jupyter_matlab_kernel import base_kernel as base
+from . import base_kernel as base
 from jupyter_matlab_kernel import mwi_logger, test_utils
 from jupyter_matlab_kernel.mwi_comm_helpers import MWICommHelper
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError

@@ -28,6 +28,9 @@ from jupyter_matlab_kernel.magic_execution_engine import (
 )
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
 
+from jupyter_matlab_kernel.kernels.labextension_comm import LabExtensionCommunication
+
+
 _MATLAB_STARTUP_TIMEOUT = mwi_settings.get_process_startup_timeout()
 
 
@@ -141,6 +144,16 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
         # Communication helper for interaction with backend MATLAB proxy
         self.mwi_comm_helper = None
 
+        # Used to detect if this Kernel has been assigned a MATLAB-proxy server or not
+        self.is_matlab_assigned = False
+
+        self.labext_comm = LabExtensionCommunication(self)
+
+        # Override message types with custom handlers.
+        self.shell_handlers["comm_open"] = self.labext_comm.comm_open
+        self.shell_handlers["comm_msg"] = self.labext_comm.comm_msg
+        self.shell_handlers["comm_close"] = self.labext_comm.comm_close
+
     # ipykernel Interface API
     # https://ipython.readthedocs.io/en/stable/development/wrapperkernels.html
 
@@ -211,6 +224,12 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
         try:
             accumulated_magic_outputs = []
             performed_startup_checks = False
+
+            # Check if matlab-proxy is already assigned or not and call the startup method.
+            if not self.is_matlab_assigned:
+                await self.start_matlab_proxy_and_comm_helper()
+                self.is_matlab_assigned = True
+
 
             for output in self.magic_engine.process_before_cell_execution(
                 code, self.execution_count
@@ -403,6 +422,20 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
         )
 
     # Helper functions
+
+    async def start_matlab_proxy_and_comm_helper(self):
+        """
+        Start MATLAB proxy and communication helper.
+
+        This method is intended to be overridden by subclasses to perform
+        any necessary setup for matlab-proxy startup. The default implementation
+        does nothing.
+
+        Returns:
+            None
+        """
+        # This function needs to be overridden by MPMKernel and JSPKernel accordingly
+        pass
 
     def display_output(self, out):
         """

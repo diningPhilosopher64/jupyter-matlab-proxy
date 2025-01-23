@@ -1,4 +1,4 @@
-// Copyright 2023-2024 The MathWorks, Inc.
+// Copyright 2023-2025 The MathWorks, Inc.
 
 // Create a command to open a new .m file.
 // Add this command to the Launcher (under "Other"),
@@ -14,7 +14,7 @@ import { ILauncher } from '@jupyterlab/launcher';
 
 import { ReadonlyPartialJSONObject } from '@lumino/coreutils';
 
-import { newMFileIcon, matlabIcon } from './icons';
+import { newMFileIcon, matlabIcon } from '../icons';
 
 const FACTORY = 'Editor';
 const PALETTE_CATEGORY = 'Other';

@@ -1,4 +1,4 @@
-// Copyright 2023-2024 The MathWorks, Inc.
+// Copyright 2023-2025 The MathWorks, Inc.
 
 // Set up CodeMirror for the MATLAB language.
 
@@ -20,7 +20,7 @@ export function addMATLABCodeMirror (languageRegistry: IEditorLanguageRegistry) 
         extensions: ['m', 'mlx'],
         filename: /^[a-zA-Z][a-zA-Z0-9_]*\.m$/,
         async load () {
-            const m = await import('./codemirror-lang-matlab/codemirror-lang-matlab');
+            const m = await import('../codemirror-lang-matlab/codemirror-lang-matlab');
             return m.matlab();
         }
     });
