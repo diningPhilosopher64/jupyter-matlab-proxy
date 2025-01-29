@@ -80,8 +80,6 @@ class MatlabCommunicationExtension implements DocumentRegistry.IWidgetExtension<
     }
 }
 
-// TODO: Have a similar method as a part of the plugin so that it can be called in index.ts once while iterating
-// over list of plugins.
 function disposeResources () {
     const commService = CommService.getService();
     commService.getComm()?.close();

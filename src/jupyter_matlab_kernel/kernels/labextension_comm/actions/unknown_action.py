@@ -1,3 +1,5 @@
+# Copyright 2025 The MathWorks, Inc.
+
 from . import ActionCommand
 
 class UnknownAction(ActionCommand):
@@ -8,5 +10,5 @@ class UnknownAction(ActionCommand):
     def get_code(self):
         pass
 
-    async def execute(self, mwi_comm_helper, comm, data):
+    async def execute(self, comm, data):
         raise Exception("Unknown action")

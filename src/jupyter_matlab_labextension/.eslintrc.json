@@ -8,6 +8,10 @@
   },
   "plugins": ["@typescript-eslint"],
   "extends": ["standard"],
+  "env": {
+    "node": true,
+    "browser": true
+  },
   "rules": {
       "indent": ["error", 4, { "SwitchCase": 1 }],
       "semi": ["error", "always"],

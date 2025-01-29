@@ -1,4 +1,4 @@
-# Copyright 2024 The MathWorks, Inc.
+# Copyright 2024-2025 The MathWorks, Inc.
 
 """This module contains derived class implementation of MATLABKernel that uses
 MATLAB Proxy Manager to manage interactions with matlab-proxy & MATLAB.
@@ -53,10 +53,14 @@ class MATLABKernelUsingMPM(base.BaseMATLABKernel):
 
         # Starts the matlab proxy process if this kernel hasn't yet been assigned a
         # matlab proxy and sets the attributes on kernel to talk to the correct backend.
-        if not self.is_matlab_assigned:
-            self.log.debug("Starting matlab-proxy")
-            await self.start_matlab_proxy_and_comm_helper()
-            self.is_matlab_assigned = True
+        try:
+            if not self.is_matlab_assigned:
+                self.log.debug("Starting matlab-proxy")
+                await self.start_matlab_proxy_and_comm_helper()
+                self.is_matlab_assigned = True
+
+        except MATLABConnectionError as err:
+            self.startup_error = err
 
         return await super().do_execute(
             code=code,
@@ -101,18 +105,15 @@ class MATLABKernelUsingMPM(base.BaseMATLABKernel):
     async def start_matlab_proxy_and_comm_helper(self) -> None:
         """
         Starts the MATLAB proxy using the proxy manager and fetches its status.
-        """
-        try:
-            (
-                murl,
-                self.matlab_proxy_base_url,
-                headers,
-                self.mpm_auth_token,
-            ) = await self._initialize_matlab_proxy_with_mpm(self.log)
+        """        
+        (
+            murl,
+            self.matlab_proxy_base_url,
+            headers,
+            self.mpm_auth_token,
+        ) = await self._initialize_matlab_proxy_with_mpm(self.log)
 
-            await self._initialize_mwi_comm_helper(murl, headers)
-        except MATLABConnectionError as err:
-            self.startup_error = err
+        await self._initialize_mwi_comm_helper(murl, headers)            
 
     async def _initialize_matlab_proxy_with_mpm(self, _logger: Logger):
         """

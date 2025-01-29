@@ -1,0 +1,15 @@
+{
+    "mw.desktop.quickAccess": {
+        "items": [
+        {
+            "name": "mytoolbox.MyQAItem",
+            "type": "PushButton",
+            "action": {
+                "text": "Open in JupyterLab",
+                "description": "My quick action item 1",
+                "icon": "./icon.svg",
+                "callback": "openJupyterLab"
+            }
+        }]
+    }
+}
