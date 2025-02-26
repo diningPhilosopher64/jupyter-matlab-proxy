@@ -12,7 +12,9 @@ import { Token } from '@lumino/coreutils';
 import path from 'path';
 
 let currentFileName : string | undefined;
+let notebookLanguage : string | undefined;
 let currentNotebook: NotebookPanel | null;
+let isNotebookOpen = false;
 
 // Define a unique token for the FileTracker plugin
 export const FileTrackerService = new Token<any>('@mathworks/MatlabFileTrackerPlugin');
@@ -32,16 +34,22 @@ export const matlabFileTrackerPlugin: JupyterFrontEndPlugin<void> = {
         // update currentFileName to notebooks' name.
         currentNotebook = notebookTracker.currentWidget;
         if (currentNotebook) {
-            currentFileName = currentNotebook.context.path;
+            updateNotebookInfo(currentNotebook);
+        } else {
+            currentFileName = undefined;
+            notebookLanguage = undefined;
+            isNotebookOpen = false;
         }
         console.log(currentFileName ? `Current file name is ${currentFileName}` : 'No file opened');
 
         // Add state change listener
-        notebookTracker.currentChanged.connect(() => {
-            // Update the name of the currentFile when the notebook is changed or closed
-            currentNotebook = notebookTracker.currentWidget;
+        notebookTracker.currentChanged.connect((_, currentNotebook) => {
             if (currentNotebook) {
-                currentFileName = currentNotebook.context.path;
+                updateNotebookInfo(currentNotebook);
+            } else {
+                currentFileName = undefined;
+                notebookLanguage = undefined;
+                isNotebookOpen = false;
             }
             console.log(currentFileName ? `Current file name is ${currentFileName}` : 'No file opened');
         });
@@ -51,6 +59,10 @@ export const matlabFileTrackerPlugin: JupyterFrontEndPlugin<void> = {
         console.log('Current direcotry path is ', currentPath, typeof (currentPath), currentPath?.length);
     }
 };
+
+export function isMatlabNotebook (): boolean {
+    return isNotebookOpen && notebookLanguage === 'matlab';
+}
 
 export function getCurrentFileName (): string | undefined {
     return currentFileName;
@@ -66,4 +78,18 @@ export function getCurrentFilePath (): string | undefined {
 
 export function getCurrentNotebook (): NotebookPanel | null {
     return currentNotebook;
+}
+
+async function updateNotebookInfo (panel: NotebookPanel): Promise<void> {
+    await panel.sessionContext.ready;
+    currentFileName = panel.context.path;
+    const metadata = panel.content?.model?.metadata as any;
+    if (metadata) {
+        const kernelInfo = metadata.kernelspec as any;
+        if (kernelInfo && kernelInfo.language) {
+            notebookLanguage = kernelInfo.language.toLowerCase();
+        }
+    }
+
+    isNotebookOpen = panel.context !== null && panel.context.path.endsWith('.ipynb');
 }

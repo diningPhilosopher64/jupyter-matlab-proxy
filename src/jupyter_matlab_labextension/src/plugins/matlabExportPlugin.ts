@@ -14,7 +14,7 @@ import { Menu } from '@lumino/widgets';
 import { PathExt } from '@jupyterlab/coreutils';
 
 import { ICommService } from './matlabCommunicationPlugin';
-import { FileTrackerService, getCurrentFilePath } from './matlabFileTrackerPlugin';
+import { FileTrackerService, getCurrentFilePath, isMatlabNotebook } from './matlabFileTrackerPlugin';
 import { ActionFactory } from './actions/actionFactory';
 import { ActionTypes } from './actions/actionTypes';
 import { CheckFileExistsAction } from './actions/checkFileExistsAction';
@@ -44,7 +44,7 @@ export const matlabExportPlugin: JupyterFrontEndPlugin<void> = {
             execute: () => {
                 exportHandler();
             },
-            isEnabled: () => isNotebookOpen(notebookTracker)
+            isEnabled: () => isMatlabNotebook()
         });
 
         palette.addItem({ command: exportCommandPaletteItem, category: 'File' });
@@ -67,7 +67,7 @@ export const matlabExportPlugin: JupyterFrontEndPlugin<void> = {
                 execute: async () => {
                     await exportHandler();
                 },
-                isEnabled: () => isNotebookOpen(notebookTracker)
+                isEnabled: () => isMatlabNotebook()
             });
             exportSubmenu.addItem({ command: exportCommandMenuItem });
         }
@@ -137,10 +137,4 @@ async function exportHandler () : Promise<void> {
             mlxFilePath: finalMlxFilePath
         });
     }
-}
-
-function isNotebookOpen (notebookTracker: INotebookTracker): boolean {
-    return notebookTracker.currentWidget !== null &&
-      notebookTracker.currentWidget?.context !== null &&
-      notebookTracker.currentWidget?.context?.path.endsWith('.ipynb');
 }
