@@ -230,7 +230,6 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
                 await self.start_matlab_proxy_and_comm_helper()
                 self.is_matlab_assigned = True
 
-
             for output in self.magic_engine.process_before_cell_execution(
                 code, self.execution_count
             ):

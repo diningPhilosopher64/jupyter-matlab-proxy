@@ -11,8 +11,7 @@ class LabExtensionCommunication:
         self.log = kernel.log
 
     def comm_open(self, stream, ident, msg):
-        """Handler to execute when labextension sends a message with 'comm_open' type .
-        """
+        """Handler to execute when labextension sends a message with 'comm_open' type ."""
         content = msg["content"]
         comm_id = content["comm_id"]
         target_name = content["target_name"]
@@ -23,10 +22,11 @@ class LabExtensionCommunication:
         self.log.info("Successfully created communication channel with labextension")
 
     async def comm_msg(self, stream, ident, msg):
-        """Handler to execute when labextension sends a message with 'comm_msg' type.
-        """
+        """Handler to execute when labextension sends a message with 'comm_msg' type."""
         if not self.comm:
-            self.log.error("Received comm_msg but no communication channel is available")
+            self.log.error(
+                "Received comm_msg but no communication channel is available"
+            )
             raise Exception("No Communcation channel available")
 
         content = msg["content"]
@@ -48,8 +48,7 @@ class LabExtensionCommunication:
             self.log.error(f"Failed to execute action with exception: {err}")
 
     def comm_close(self, stream, ident, msg):
-        """Handler to execute when labextension sends a message with 'comm_close' type.
-        """
+        """Handler to execute when labextension sends a message with 'comm_close' type."""
         content = msg["content"]
         comm_id = content["comm_id"]
 

@@ -105,7 +105,7 @@ class MATLABKernelUsingMPM(base.BaseMATLABKernel):
     async def start_matlab_proxy_and_comm_helper(self) -> None:
         """
         Starts the MATLAB proxy using the proxy manager and fetches its status.
-        """        
+        """
         (
             murl,
             self.matlab_proxy_base_url,
@@ -113,7 +113,7 @@ class MATLABKernelUsingMPM(base.BaseMATLABKernel):
             self.mpm_auth_token,
         ) = await self._initialize_matlab_proxy_with_mpm(self.log)
 
-        await self._initialize_mwi_comm_helper(murl, headers)            
+        await self._initialize_mwi_comm_helper(murl, headers)
 
     async def _initialize_matlab_proxy_with_mpm(self, _logger: Logger):
         """

@@ -1,7 +1,14 @@
 # Copyright 2025 The MathWorks, Inc.
 
 from typing import Union
-from jupyter_matlab_kernel.kernels.labextension_comm.actions import ConvertAction, EditAction, MatlabStatusAction, StartMatlabProxyAction,CheckFileExistsAction, UnknownAction
+from jupyter_matlab_kernel.kernels.labextension_comm.actions import (
+    ConvertAction,
+    EditAction,
+    MatlabStatusAction,
+    StartMatlabProxyAction,
+    CheckFileExistsAction,
+    UnknownAction,
+)
 from jupyter_matlab_kernel.kernels.labextension_comm.actions.types import ActionTypes
 
 
@@ -14,7 +21,13 @@ class ActionFactory:
     """
 
     @staticmethod
-    def create_action(action_type, kernel) -> Union[ConvertAction, EditAction, MatlabStatusAction, StartMatlabProxyAction, UnknownAction]:
+    def create_action(action_type, kernel) -> Union[
+        ConvertAction,
+        EditAction,
+        MatlabStatusAction,
+        StartMatlabProxyAction,
+        UnknownAction,
+    ]:
         """Determines and returns the appropriate Action to use
 
         Args:
@@ -26,7 +39,7 @@ class ActionFactory:
         """
         if ActionTypes.CONVERT.value == action_type:
             return ConvertAction(kernel)
-        
+
         elif ActionTypes.EDIT.value == action_type:
             return EditAction(kernel)
 
@@ -35,10 +48,10 @@ class ActionFactory:
 
         elif ActionTypes.START_MATLAB_PROXY.value == action_type:
             return StartMatlabProxyAction(kernel)
-        
+
         # Add more elif conditions as and when new action types are introduced
         elif ActionTypes.CHECK_FILE_EXISTS.value == action_type:
             return CheckFileExistsAction(kernel)
-        
+
         else:
             return UnknownAction(kernel)

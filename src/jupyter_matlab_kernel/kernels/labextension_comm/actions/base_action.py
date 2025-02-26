@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 
+
 # Abstract Action class which other actions are meant to implement.
 class ActionCommand(ABC):
     @abstractmethod
