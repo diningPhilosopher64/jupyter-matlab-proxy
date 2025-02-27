@@ -11,6 +11,7 @@ import { KernelMessage } from '@jupyterlab/services';
 import { JSONObject, JSONValue, Token } from '@lumino/coreutils';
 import { DisposableDelegate } from '@lumino/disposable';
 import { ActionFactory } from './actions/actionFactory';
+import { isMatlabNotebook, updateNotebookInfo } from './matlabFileTrackerPlugin';
 
 // Add more action types as needed
   type CommunicationData = {
@@ -29,13 +30,21 @@ window.addEventListener('beforeunload', () => {
 
 class MatlabCommunicationExtension implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
     createNew (panel: NotebookPanel, context: DocumentRegistry.IContext<INotebookModel>): DisposableDelegate {
-        panel.sessionContext.ready.then(() => {
+        panel.sessionContext.ready.then(async () => {
             const kernel = panel.sessionContext.session?.kernel;
             // If kernel is available, create channel and set up listeners.
             if (!kernel) {
                 console.log('Kernel not ready!');
                 return new DisposableDelegate(() => {});
             }
+
+            await updateNotebookInfo(panel);
+
+            if (!isMatlabNotebook()) {
+                console.log('Not a MATLAB notebook, skipping communication setup');
+                return new DisposableDelegate(() => {});
+            }
+
             // Create a unique channel name for this notebook
             const channelName = 'matlab_comm_' + Math.random().toString(36).substring(2);
             console.log('Attempting to create communication with the kernel using channel name', channelName);

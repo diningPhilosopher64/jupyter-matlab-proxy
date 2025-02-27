@@ -33,8 +33,9 @@ export const matlabFileTrackerPlugin: JupyterFrontEndPlugin<void> = {
         // If jupyterlab interface loads for the first time with a notebook already opened
         // update currentFileName to notebooks' name.
         currentNotebook = notebookTracker.currentWidget;
+
         if (currentNotebook) {
-            updateNotebookInfo(currentNotebook);
+            await updateNotebookInfo(currentNotebook);
         } else {
             currentFileName = undefined;
             notebookLanguage = undefined;
@@ -43,9 +44,9 @@ export const matlabFileTrackerPlugin: JupyterFrontEndPlugin<void> = {
         console.log(currentFileName ? `Current file name is ${currentFileName}` : 'No file opened');
 
         // Add state change listener
-        notebookTracker.currentChanged.connect((_, currentNotebook) => {
+        notebookTracker.currentChanged.connect(async (_, currentNotebook) => {
             if (currentNotebook) {
-                updateNotebookInfo(currentNotebook);
+                await updateNotebookInfo(currentNotebook);
             } else {
                 currentFileName = undefined;
                 notebookLanguage = undefined;
@@ -80,7 +81,7 @@ export function getCurrentNotebook (): NotebookPanel | null {
     return currentNotebook;
 }
 
-async function updateNotebookInfo (panel: NotebookPanel): Promise<void> {
+export async function updateNotebookInfo (panel: NotebookPanel): Promise<void> {
     await panel.sessionContext.ready;
     currentFileName = panel.context.path;
     const metadata = panel.content?.model?.metadata as any;
