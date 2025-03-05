@@ -7,6 +7,7 @@ from jupyter_matlab_kernel.kernels.labextension_comm.actions import (
     MatlabStatusAction,
     StartMatlabProxyAction,
     CheckFileExistsAction,
+    NudgeAction,
     UnknownAction,
 )
 from jupyter_matlab_kernel.kernels.labextension_comm.actions.types import ActionTypes
@@ -26,6 +27,7 @@ class ActionFactory:
         EditAction,
         MatlabStatusAction,
         StartMatlabProxyAction,
+        NudgeAction,
         UnknownAction,
     ]:
         """Determines and returns the appropriate Action to use
@@ -48,6 +50,9 @@ class ActionFactory:
 
         elif ActionTypes.START_MATLAB_PROXY.value == action_type:
             return StartMatlabProxyAction(kernel)
+        
+        elif ActionTypes.NUDGE.value == action_type:
+            return NudgeAction(kernel)
 
         # Add more elif conditions as and when new action types are introduced
         elif ActionTypes.CHECK_FILE_EXISTS.value == action_type:

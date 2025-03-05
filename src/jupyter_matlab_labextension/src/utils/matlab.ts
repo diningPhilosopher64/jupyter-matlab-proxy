@@ -8,6 +8,8 @@ import PopupWindowManager from './window';
 
 import { Notification } from '@jupyterlab/apputils';
 import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
+import { ICommunicationChannel } from '../plugins/matlabCommunicationPlugin';
+import { NotebookPanel } from '@jupyterlab/notebook';
 
 export function getMatlabUrl (): string {
     const baseUrl = PageConfig.getBaseUrl();
@@ -15,7 +17,7 @@ export function getMatlabUrl (): string {
     return baseUrl + 'matlab/default/index.html';
 }
 
-export async function handleMatlabLicensing (url: string) {
+export async function handleMatlabLicensing (url: string, comm: ICommunicationChannel, notebook: NotebookPanel) {
     const popupManager = new PopupWindowManager();
     console.debug('Show Pop up for MATLAB Sign In');
     popupManager.openPopup({
@@ -25,13 +27,13 @@ export async function handleMatlabLicensing (url: string) {
         height: 600
     });
 
-    await waitForMatlabToFinishLicensing(1000);
+    await waitForMatlabToFinishLicensing(1000, comm, notebook);
     console.debug('Finished SignIn successfully');
     popupManager.closePopup();
 }
 
-export async function waitForMatlabToStart (sleepInMS: number) : Promise<void> {
-    const matlabStatusAction = ActionFactory.createAction(ActionTypes.MATLAB_STATUS, true);
+export async function waitForMatlabToStart (sleepInMS: number, comm: ICommunicationChannel, notebook: NotebookPanel) : Promise<void> {
+    const matlabStatusAction = ActionFactory.createAction(ActionTypes.MATLAB_STATUS, true, notebook);
     const matlabStartPromise = new PromiseDelegate<ReadonlyJSONValue>();
     Notification.promise(matlabStartPromise.promise, {
         pending: {
@@ -49,7 +51,7 @@ export async function waitForMatlabToStart (sleepInMS: number) : Promise<void> {
         error: { message: () => 'Failed to start MATLAB' }
     });
     while (true) {
-        await matlabStatusAction.execute(null);
+        await matlabStatusAction.execute(null, comm);
         const status = MatlabStatusAction.getStatus();
         if (status.status === 'up') {
             matlabStartPromise.resolve(null);
@@ -59,8 +61,8 @@ export async function waitForMatlabToStart (sleepInMS: number) : Promise<void> {
     }
 }
 
-async function waitForMatlabToFinishLicensing (sleepInMS: number) : Promise<void> {
-    const matlabStatusAction = ActionFactory.createAction(ActionTypes.MATLAB_STATUS, true);
+async function waitForMatlabToFinishLicensing (sleepInMS: number, comm: ICommunicationChannel, notebook: NotebookPanel) : Promise<void> {
+    const matlabStatusAction = ActionFactory.createAction(ActionTypes.MATLAB_STATUS, true, notebook);
 
     const matlabLicensePromise = new PromiseDelegate<ReadonlyJSONValue>();
     Notification.promise(matlabLicensePromise.promise, {
@@ -80,7 +82,7 @@ async function waitForMatlabToFinishLicensing (sleepInMS: number) : Promise<void
     });
 
     while (true) {
-        await matlabStatusAction.execute(null);
+        await matlabStatusAction.execute(null, comm);
         const status = MatlabStatusAction.getStatus();
         console.log('Status in licensing is ', status);
         if (status.isLicensed) {

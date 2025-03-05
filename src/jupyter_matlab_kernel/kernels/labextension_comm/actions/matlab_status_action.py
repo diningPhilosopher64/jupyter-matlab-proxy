@@ -1,9 +1,6 @@
 # Copyright 2025 The MathWorks, Inc.
 
 from . import ActionCommand, ActionTypes
-from pathlib import Path
-import asyncio
-from jupyter_matlab_kernel.mwi_comm_helpers import MWICommHelper
 
 
 class MatlabStatusAction(ActionCommand):

@@ -2,9 +2,9 @@
 
 import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 
-import { CommService } from '../matlabCommunicationPlugin';
 import { BaseAction } from './baseAction';
 import { ActionTypes } from './actionTypes';
+import { ICommunicationChannel } from '../matlabCommunicationPlugin';
 
 export class EditAction extends BaseAction {
     blocking: boolean;
@@ -19,12 +19,12 @@ export class EditAction extends BaseAction {
         return ActionTypes.EDIT;
     }
 
-    public async execute (data: any): Promise<void> {
+    public async execute (data: any, comm:ICommunicationChannel): Promise<void> {
         console.log('EditAction execute called with data ', data);
 
         // Send edit request to kernel only if mlxFilePath is available
         if ('mlxFilePath' in data) {
-            this.sendEditRequest(data.mlxFilePath);
+            this.sendEditRequest(data.mlxFilePath, comm);
         } else {
             const errMsg = 'mlxFilePath missing for sending edit request';
             console.error(errMsg);
@@ -43,7 +43,7 @@ export class EditAction extends BaseAction {
         console.log('EditAction execute completed');
     }
 
-    public onMsg (data: any): void {
+    public onMsg (data: any, _: ICommunicationChannel): void {
         if ('error' in data && data.error) {
             console.error('Received error from kernel ', data.error);
             if (EditAction.blockingPromise) {
@@ -59,8 +59,7 @@ export class EditAction extends BaseAction {
         console.log('EditAction onMsg completed');
     }
 
-    private sendEditRequest (filePath: string): boolean {
-        const comm = CommService.getService().getComm();
+    private sendEditRequest (filePath: string, comm: ICommunicationChannel): boolean {
         if (!comm || comm.isDisposed) {
             console.error('Communication channel is not available');
             return false;

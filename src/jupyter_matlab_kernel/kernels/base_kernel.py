@@ -8,6 +8,7 @@ backend MATLAB proxy servers.
 2. MATLAB Kernels that uses proxy manager to start backend matlab proxy servers
 """
 
+import asyncio
 import os
 import sys
 import time
@@ -29,6 +30,7 @@ from jupyter_matlab_kernel.magic_execution_engine import (
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
 
 from jupyter_matlab_kernel.kernels.labextension_comm import LabExtensionCommunication
+from jupyter_matlab_kernel.kernels.labextension_comm.actions.types import ActionTypes
 
 
 _MATLAB_STARTUP_TIMEOUT = mwi_settings.get_process_startup_timeout()
@@ -469,8 +471,15 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
                 "metadata": {},
                 "execution_count": self.execution_count,
             }
+            if out['mimetype'][0] == 'image/png':
+                self.log.info(f"\n \n erceived image type sending nudge \n")
+                task = self.labext_comm.send_message(ActionTypes.NUDGE, "You can interact with a figure in MATLAB. Would you like to open the notebook in MATLAB ?")
+                asyncio.create_task(task)
         else:
             response = out["content"]
+            if 'name' in response and response['name'] == 'stderr':
+                task = self.labext_comm.send_message(ActionTypes.NUDGE, "To know more about the error would you like to open the notebook in MATLAB ?")
+                asyncio.create_task(task)
         self.send_response(self.iopub_socket, msg_type, response)
 
     async def perform_startup_checks(

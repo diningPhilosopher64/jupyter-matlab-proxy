@@ -1,6 +1,7 @@
 // Copyright 2025 The MathWorks, Inc.
 
 import { showDialog, Dialog, InputDialog } from '@jupyterlab/apputils';
+import { PathExt } from '@jupyterlab/coreutils';
 
 export async function getNewFileName (currentFileName: string): Promise<string | null> {
     while (true) {
@@ -13,6 +14,8 @@ export async function getNewFileName (currentFileName: string): Promise<string |
                 Dialog.okButton({ label: 'New Name' })
             ]
         });
+
+        console.log('\n user chose \n ', result);
 
         if (result.button.label === 'New Name') {
             const newNameResult = await InputDialog.getText({
@@ -39,7 +42,9 @@ export async function getNewFileName (currentFileName: string): Promise<string |
                 return null;
             }
         } else if (result.button.label === 'Overwrite') {
-            return currentFileName; // User chose to overwrite the existing file
+            // User chose to overwrite the existing file
+            const mlxFileNameWithoutExtension = PathExt.basename(currentFileName, PathExt.extname(currentFileName));
+            return `${mlxFileNameWithoutExtension}.mlx`;
         } else {
             return null; // User cancelled, no need to proceed further
         }

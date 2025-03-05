@@ -2,7 +2,7 @@
 
 import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 
-import { CommService } from '../matlabCommunicationPlugin';
+import { ICommunicationChannel } from '../matlabCommunicationPlugin';
 import { BaseAction } from './baseAction';
 import { ActionTypes } from './actionTypes';
 
@@ -24,7 +24,7 @@ export class CheckFileExistsAction extends BaseAction {
         return CheckFileExistsAction.fileExists;
     }
 
-    public async execute (data: any): Promise<void> {
+    public async execute (data: any, comm: ICommunicationChannel): Promise<void> {
         if (!('mlxFilePath' in data)) {
             console.error('Missing data for executing CheckFileExists action...');
             return;
@@ -34,7 +34,8 @@ export class CheckFileExistsAction extends BaseAction {
             CheckFileExistsAction.blockingPromise = new PromiseDelegate<ReadonlyJSONValue>();
         }
 
-        if (this.sendCheckFileExistsRequest(data.mlxFilePath)) {
+        if (this.sendCheckFileExistsRequest(data.mlxFilePath, comm)) {
+            console.log('\n in execute ', comm);
             console.log('Successfully sent check file exists request to kernel');
         } else {
             console.error('Failed to send check file exists request to kernel');
@@ -48,7 +49,7 @@ export class CheckFileExistsAction extends BaseAction {
         console.log('CheckFileExistsAction execute completed');
     }
 
-    public onMsg (data: any): void {
+    public onMsg (data: any, _: ICommunicationChannel): void {
         if ('error' in data && data.error) {
             console.error('Received error from kernel ', data.error);
             if (CheckFileExistsAction.blockingPromise) {
@@ -67,8 +68,8 @@ export class CheckFileExistsAction extends BaseAction {
         console.log('CheckFileExistsAction onMsg completed');
     }
 
-    private sendCheckFileExistsRequest (filePath: string): boolean {
-        const comm = CommService.getService().getComm();
+    private sendCheckFileExistsRequest (filePath: string, comm: ICommunicationChannel): boolean {
+        // const comm = CommService.getService().getComm();
         if (!comm || comm.isDisposed) {
             console.error('Communication channel is not available');
             return false;

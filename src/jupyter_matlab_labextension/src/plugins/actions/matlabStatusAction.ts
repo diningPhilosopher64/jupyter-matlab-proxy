@@ -2,7 +2,7 @@
 
 import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 
-import { CommService } from '../matlabCommunicationPlugin';
+import { ICommunicationChannel } from '../matlabCommunicationPlugin';
 import { BaseAction } from './baseAction';
 import { ActionTypes } from './actionTypes';
 export class MatlabStatusAction extends BaseAction {
@@ -23,13 +23,13 @@ export class MatlabStatusAction extends BaseAction {
         return ActionTypes.MATLAB_STATUS;
     }
 
-    public async execute (data: any): Promise<void> {
+    public async execute (data: any, comm: ICommunicationChannel): Promise<void> {
         if (!MatlabStatusAction.blockingPromise) {
             MatlabStatusAction.blockingPromise = new PromiseDelegate<ReadonlyJSONValue>();
         }
 
         console.log('MatlabStatusAction execute called with data ', data);
-        this.fetchMatlabStatus();
+        this.fetchMatlabStatus(comm);
 
         if (this.blocking) {
             console.log('This is a blocking action will wait for promise to resolve...');
@@ -38,7 +38,7 @@ export class MatlabStatusAction extends BaseAction {
         console.log('MatlabStatusAction execute completed');
     }
 
-    public onMsg (data: any): void {
+    public onMsg (data: any, _: ICommunicationChannel): void {
         console.log('Received data for matlab action from kernel ', data);
         MatlabStatusAction.status = data.matlabStatus;
 
@@ -51,8 +51,7 @@ export class MatlabStatusAction extends BaseAction {
         console.log('MatlabStatusAction onMsg completed');
     }
 
-    private fetchMatlabStatus (): any {
-        const comm = CommService.getService().getComm();
+    private fetchMatlabStatus (comm: ICommunicationChannel): any {
         if (!comm || comm.isDisposed) {
             console.error('Communication channel is not available');
             return false;

@@ -2,7 +2,7 @@
 
 import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 
-import { CommService } from '../matlabCommunicationPlugin';
+import { ICommunicationChannel } from '../matlabCommunicationPlugin';
 import { BaseAction } from './baseAction';
 import { ActionTypes } from './actionTypes';
 
@@ -19,13 +19,13 @@ export class StartMatlabProxyAction extends BaseAction {
         return ActionTypes.START_MATLAB_PROXY;
     }
 
-    public async execute (data: any): Promise<void> {
+    public async execute (data: any, comm:ICommunicationChannel): Promise<void> {
         if (!StartMatlabProxyAction.blockingPromise) {
             StartMatlabProxyAction.blockingPromise = new PromiseDelegate<ReadonlyJSONValue>();
         }
 
         console.log('StartMatlab execute action called with data ', data);
-        this.sendStartMatlabRequest();
+        this.sendStartMatlabRequest(comm);
 
         if (this.blocking) {
             console.log('This is a blocking action will wait for promise to resolve...');
@@ -33,7 +33,7 @@ export class StartMatlabProxyAction extends BaseAction {
         }
     }
 
-    public onMsg (data: any): void {
+    public onMsg (data: any, _: ICommunicationChannel): void {
         if ('error' in data && data.error) {
             console.error('Received error from kernel ', data.error);
             if (StartMatlabProxyAction.blockingPromise) {
@@ -50,8 +50,7 @@ export class StartMatlabProxyAction extends BaseAction {
         console.log('StartMatlab action onMsg completed');
     }
 
-    private sendStartMatlabRequest (): void {
-        const comm = CommService.getService().getComm();
+    private sendStartMatlabRequest (comm: ICommunicationChannel): void {
         if (!comm || comm.isDisposed) {
             console.error('Communication channel is not available');
             return;

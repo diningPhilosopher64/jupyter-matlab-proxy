@@ -8,4 +8,5 @@ from .edit_action import EditAction
 from .start_matlab_proxy_action import StartMatlabProxyAction
 from .matlab_status_action import MatlabStatusAction
 from .check_file_exists_action import CheckFileExistsAction
+from .nudge_action import NudgeAction
 from .action_factory import ActionFactory

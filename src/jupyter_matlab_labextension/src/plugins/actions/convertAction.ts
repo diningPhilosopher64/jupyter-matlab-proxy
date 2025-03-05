@@ -2,7 +2,7 @@
 
 import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 import { Notification } from '@jupyterlab/apputils';
-import { CommService } from '../matlabCommunicationPlugin';
+import { ICommunicationChannel } from '../matlabCommunicationPlugin';
 import { BaseAction } from './baseAction';
 import { ActionTypes } from './actionTypes';
 
@@ -19,9 +19,9 @@ export class ConvertAction extends BaseAction {
         return ActionTypes.CONVERT;
     }
 
-    public async execute (data: any): Promise<void> {
-        if ('action' in data && data.action === 'convert' && 'ipynbFilePath' in data && 'mlxFilePath' in data) {
-            console.error('action, ipynbFilePath or mlxFilePath missing in data.');
+    public async execute (data: any, comm: ICommunicationChannel): Promise<void> {
+        if (!('action' in data) || data.action !== 'convert' || !('ipynbFilePath' in data) || !('mlxFilePath' in data)) {
+            console.error('action, ipynbFilePath or mlxFilePath missing in data:', data);
             return;
         }
 
@@ -33,7 +33,7 @@ export class ConvertAction extends BaseAction {
         Notification.promise(ConvertAction.blockingPromise.promise, {
             pending: {
                 message: (() : string => {
-                    if (this.sendConvertRequest(data.ipynbFilePath, data.mlxFilePath)) {
+                    if (this.sendConvertRequest(data.ipynbFilePath, data.mlxFilePath, comm)) {
                         console.log('Successfully sent convert request to MATLAB');
                     } else {
                         console.error('Failed to send convert request to MATLAB');
@@ -67,7 +67,7 @@ export class ConvertAction extends BaseAction {
         console.log('ConvertAction execute completed');
     }
 
-    public onMsg (data: any): void {
+    public onMsg (data: any, _: ICommunicationChannel): void {
         if ('error' in data && data.error) {
             console.error('Received error from kernel ', data.error);
             if (ConvertAction.blockingPromise) {
@@ -99,8 +99,7 @@ export class ConvertAction extends BaseAction {
         console.log('ConvertAction onMsg completed');
     }
 
-    private sendConvertRequest (ipynbFilePath: string, mlxFilePath: string): boolean {
-        const comm = CommService.getService().getComm();
+    private sendConvertRequest (ipynbFilePath: string, mlxFilePath: string, comm:ICommunicationChannel): boolean {
         if (!comm || comm.isDisposed) {
             console.error('Communication channel is not available');
             return false;
