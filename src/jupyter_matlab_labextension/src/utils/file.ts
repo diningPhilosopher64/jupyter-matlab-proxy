@@ -2,8 +2,13 @@
 
 import { showDialog, Dialog, InputDialog } from '@jupyterlab/apputils';
 import { PathExt } from '@jupyterlab/coreutils';
+import { NotebookPanel } from '@jupyterlab/notebook';
+import { ICommunicationChannel } from '../plugins/matlabCommunicationPlugin';
+import { ActionFactory } from '../plugins/actions/actionFactory';
+import { ActionTypes } from '../plugins/actions/actionTypes';
+import { CheckFileExistsAction } from '../plugins/actions/checkFileExistsAction';
 
-export async function getNewFileName (currentFileName: string): Promise<string | null> {
+async function getNewFileName (currentFileName: string): Promise<string | null> {
     while (true) {
         const result = await showDialog({
             title: 'File already exists',
@@ -48,5 +53,31 @@ export async function getNewFileName (currentFileName: string): Promise<string |
         } else {
             return null; // User cancelled, no need to proceed further
         }
+    }
+}
+
+export async function getFileNameForConversion (notebook: NotebookPanel, comm: ICommunicationChannel) : Promise<string | null> {
+    const notebookName = notebook.context.path; // An ipynb file is guarranteed to be here as we are in a Notebook
+
+    const currentDir = PathExt.dirname(notebookName);
+    const notebookNameWithoutExtension = PathExt.basename(notebookName, PathExt.extname(notebookName));
+    const mlxFileName = `${notebookNameWithoutExtension}.mlx`;
+    let finalMlxFilePath = PathExt.join(currentDir, mlxFileName);
+
+    const checkFileExistsAction = ActionFactory.createAction(ActionTypes.CHECK_FILE_EXISTS, true, notebook);
+    await checkFileExistsAction.execute({ mlxFilePath: finalMlxFilePath }, comm);
+    const fileAlreadyExists = CheckFileExistsAction.getFileExistsStatus();
+
+    if (fileAlreadyExists) {
+        const newFileName = await getNewFileName(notebookName);
+        console.log('New file name is ', newFileName);
+        if (newFileName) {
+            finalMlxFilePath = PathExt.join(currentDir, newFileName);
+            return finalMlxFilePath;
+        } else {
+            return null;// User neither provided a new file name nor chose to overwrite, so return early
+        }
+    } else {
+        return finalMlxFilePath;
     }
 }

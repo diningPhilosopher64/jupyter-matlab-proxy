@@ -17,7 +17,7 @@ export function getMatlabUrl (): string {
     return baseUrl + 'matlab/default/index.html';
 }
 
-export async function handleMatlabLicensing (url: string, comm: ICommunicationChannel, notebook: NotebookPanel) {
+async function handleMatlabLicensing (url: string, comm: ICommunicationChannel, notebook: NotebookPanel) {
     const popupManager = new PopupWindowManager();
     console.debug('Show Pop up for MATLAB Sign In');
     popupManager.openPopup({
@@ -32,7 +32,7 @@ export async function handleMatlabLicensing (url: string, comm: ICommunicationCh
     popupManager.closePopup();
 }
 
-export async function waitForMatlabToStart (sleepInMS: number, comm: ICommunicationChannel, notebook: NotebookPanel) : Promise<void> {
+async function waitForMatlabToStart (sleepInMS: number, comm: ICommunicationChannel, notebook: NotebookPanel) : Promise<void> {
     const matlabStatusAction = ActionFactory.createAction(ActionTypes.MATLAB_STATUS, true, notebook);
     const matlabStartPromise = new PromiseDelegate<ReadonlyJSONValue>();
     Notification.promise(matlabStartPromise.promise, {
@@ -91,4 +91,45 @@ async function waitForMatlabToFinishLicensing (sleepInMS: number, comm: ICommuni
         }
         await new Promise(resolve => setTimeout(resolve, sleepInMS));
     }
+}
+export async function startMatlab (notebook:NotebookPanel, comm: ICommunicationChannel) : Promise<void> {
+    // Send StartMatlabProxy action to kernel. This would be a no-op if matlab-proxy is already up
+    const startMatlabProxyAction = ActionFactory.createAction(ActionTypes.START_MATLAB_PROXY, true, notebook);
+    await startMatlabProxyAction.execute(null, comm);
+
+    // Get status of matlab-proxy
+    const matlabStatusAction = ActionFactory.createAction(ActionTypes.MATLAB_STATUS, true, notebook);
+    await matlabStatusAction.execute(null, comm);
+
+    let status = MatlabStatusAction.getStatus();
+
+    if (!status.isLicensed) {
+        await handleMatlabLicensing(getMatlabUrl(), comm, notebook);
+
+        // After sign in, re-fetch matlab status for the updated status
+        await matlabStatusAction.execute(null, comm);
+        status = MatlabStatusAction.getStatus();
+    }
+
+    if (status.status === 'starting') {
+        await waitForMatlabToStart(1000, comm, notebook);
+    }
+}
+
+export async function convertAndOpenMatlab (notebook: NotebookPanel, comm: ICommunicationChannel, finalMlxFilePath: string): Promise<void> {
+    const convertAction = ActionFactory.createAction(ActionTypes.CONVERT, true, notebook);
+    await convertAction.execute({
+        action: ActionTypes.CONVERT,
+        ipynbFilePath: notebook.context.path,
+        mlxFilePath: finalMlxFilePath
+    }, comm);
+
+    // Conversion successful, proceed with opening MATLAB
+    Notification.info('Opening MATLAB...', { autoClose: 2000 });
+    setTimeout(() => {
+        window.open(getMatlabUrl(), '_blank');
+    }, 1500);
+
+    const editAction = ActionFactory.createAction(ActionTypes.EDIT, true, notebook);
+    await editAction.execute({ action: ActionTypes.EDIT, mlxFilePath: finalMlxFilePath }, comm);
 }

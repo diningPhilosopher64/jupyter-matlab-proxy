@@ -10,12 +10,8 @@ import { ICommunicationChannel } from '../matlabCommunicationPlugin';
 import { Notification } from '@jupyterlab/apputils';
 import { NotebookPanel } from '@jupyterlab/notebook';
 import { Widget } from '@lumino/widgets';
-import { ActionFactory } from './actionFactory';
-import { CheckFileExistsAction } from './checkFileExistsAction';
-import { getNewFileName } from '../../utils/file';
-import { PathExt } from '@jupyterlab/coreutils';
-import { getMatlabUrl, handleMatlabLicensing, waitForMatlabToStart } from '../../utils/matlab';
-import { MatlabStatusAction } from './matlabStatusAction';
+import { getFileNameForConversion } from '../../utils/file';
+import { convertAndOpenMatlab, startMatlab } from '../../utils/matlab';
 
 export class NudgeAction extends BaseAction {
     blocking: boolean;
@@ -45,71 +41,19 @@ export class NudgeAction extends BaseAction {
                     label: 'Open',
                     callback: async () => {
                         console.log('Open clicked');
-                        const notebookName = this.notebook.context.path; // An ipynb file is guarranteed to be here as we are in a Notebook
-                        const matlabUrl = getMatlabUrl();
-                        const currentDir = PathExt.dirname(notebookName);
-                        const notebookNameWithoutExtension = PathExt.basename(notebookName, PathExt.extname(notebookName));
-                        const mlxFileName = `${notebookNameWithoutExtension}.mlx`;
-                        let finalMlxFilePath = PathExt.join(currentDir, mlxFileName);
-
-                        const checkFileExistsAction = ActionFactory.createAction(ActionTypes.CHECK_FILE_EXISTS, true, this.notebook);
-                        await checkFileExistsAction.execute({ mlxFilePath: finalMlxFilePath }, comm);
-                        const fileAlreadyExists = CheckFileExistsAction.getFileExistsStatus();
-
-                        if (fileAlreadyExists) {
-                            const newFileName = await getNewFileName(notebookName);
-                            console.log('New file name is ', newFileName);
-                            if (newFileName) {
-                                finalMlxFilePath = PathExt.join(currentDir, newFileName);
-                            } else {
-                                return; // User neither provided a new file name nor chose to overwrite, so return early
-                            }
+                        const finalMlxFilePath = await getFileNameForConversion(this.notebook, comm);
+                        if (!finalMlxFilePath) {
+                            return; // User aborted the conversion, so return early..
                         }
 
-                        // Send StartMatlabProxy action to kernel. This would be a no-op if matlab-proxy is already up
-                        const startMatlabProxyAction = ActionFactory.createAction(ActionTypes.START_MATLAB_PROXY, true, this.notebook);
-                        await startMatlabProxyAction.execute(null, comm);
-
-                        // Get status of matlab-proxy
-                        const matlabStatusAction = ActionFactory.createAction(ActionTypes.MATLAB_STATUS, true, this.notebook);
-                        await matlabStatusAction.execute(null, comm);
-
-                        let status = MatlabStatusAction.getStatus();
-
-                        if (!status.isLicensed) {
-                            await handleMatlabLicensing(matlabUrl, comm, this.notebook);
-
-                            // After sign in, re-fetch matlab status for the updated status
-                            await matlabStatusAction.execute(null, comm);
-                            status = MatlabStatusAction.getStatus();
-                        }
-
-                        if (status.status === 'starting') {
-                            await waitForMatlabToStart(1000, comm, this.notebook);
-                        }
-
-                        const convertAction = ActionFactory.createAction(ActionTypes.CONVERT, true, this.notebook);
-                        await convertAction.execute({
-                            action: ActionTypes.CONVERT,
-                            ipynbFilePath: notebookName,
-                            mlxFilePath: finalMlxFilePath
-                        }, comm);
-
-                        // Conversion successful, proceed with opening MATLAB
-                        Notification.info('Opening MATLAB...', { autoClose: 2000 });
-                        setTimeout(() => {
-                            window.open(matlabUrl, '_blank');
-                        }, 1500);
-
-                        const editAction = ActionFactory.createAction(ActionTypes.EDIT, true, this.notebook);
-                        await editAction.execute({ action: ActionTypes.EDIT, mlxFilePath: finalMlxFilePath }, comm);
+                        await startMatlab(this.notebook, comm);
+                        await convertAndOpenMatlab(this.notebook, comm, finalMlxFilePath);
                     }
                 },
                 {
                     label: 'Ignore',
                     callback: () => {
                         console.log('Ignore clicked');
-                        // Your ignore action logic here
                     }
                 }
             ]
