@@ -6,7 +6,7 @@ import {
 } from '@jupyterlab/application';
 
 import { DocumentRegistry } from '@jupyterlab/docregistry';
-import { INotebookModel, NotebookPanel } from '@jupyterlab/notebook';
+import { INotebookModel, INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
 import { KernelMessage } from '@jupyterlab/services';
 import { JSONObject, JSONValue, Token } from '@lumino/coreutils';
 import { DisposableDelegate } from '@lumino/disposable';
@@ -36,7 +36,6 @@ export interface ICommunicationService {
 }
 
 class MatlabCommunicationExtension implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel>, ICommunicationService {
-    // private _comm! :ICommunicationChannel;
     private _comms = new Map<string, ICommunicationChannel>();
     createNew (panel: NotebookPanel, context: DocumentRegistry.IContext<INotebookModel>): DisposableDelegate {
         panel.sessionContext.ready.then(async () => {
@@ -121,7 +120,7 @@ class MatlabCommunicationExtension implements DocumentRegistry.IWidgetExtension<
 export const matlabCommPlugin: JupyterFrontEndPlugin<MatlabCommunicationExtension> = {
     id: '@mathworks/matlabCommPlugin',
     autoStart: true,
-    // requires: [FileTrackerService],
+    requires: [INotebookTracker],
     provides: CommunicationService,
     activate: (app: JupyterFrontEnd): MatlabCommunicationExtension => {
         const matlabCommExtension = new MatlabCommunicationExtension();
@@ -136,26 +135,3 @@ export const matlabCommPlugin: JupyterFrontEndPlugin<MatlabCommunicationExtensio
         return matlabCommExtension;
     }
 };
-
-// Defining a common interface
-
-// export class CommService {
-//     // eslint-disable-next-line no-use-before-define
-//     private static instance: CommService;
-//     private _comm: ICommunicationChannel | null = null;
-
-//     public static getService (): CommService {
-//         if (!CommService.instance) {
-//             CommService.instance = new CommService();
-//         }
-//         return CommService.instance;
-//     }
-
-//     public setComm (comm: ICommunicationChannel | null): void {
-//         this._comm = comm;
-//     }
-
-//     public getComm (): ICommunicationChannel | null {
-//         return this._comm;
-//     }
-// }

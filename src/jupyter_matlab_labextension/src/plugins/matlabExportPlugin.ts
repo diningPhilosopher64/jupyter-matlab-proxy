@@ -1,146 +1,117 @@
-// // Copyright 2025 The MathWorks, Inc.
+import {
+    JupyterFrontEnd,
+    JupyterFrontEndPlugin
+} from '@jupyterlab/application';
 
-// import {
-//     JupyterFrontEnd,
-//     JupyterFrontEndPlugin
-// } from '@jupyterlab/application';
+import { ICommandPalette } from '@jupyterlab/apputils';
+import { IMainMenu } from '@jupyterlab/mainmenu';
+import {
+    INotebookTracker,
+    NotebookPanel
+} from '@jupyterlab/notebook';
+import { Menu } from '@lumino/widgets';
 
-// import { ICommandPalette } from '@jupyterlab/apputils';
+import { CommunicationService, ICommunicationService } from './matlabCommunicationPlugin';
+import { getFileNameForConversion } from '../utils/file';
+import { convertToMLX, startMatlab } from '../utils/matlab';
 
-// import { IMainMenu } from '@jupyterlab/mainmenu';
-// import { INotebookTracker } from '@jupyterlab/notebook';
-// import { Menu } from '@lumino/widgets';
+let notebook: NotebookPanel | null = null;
+let isMatlabNotebook = false;
 
-// import { PathExt } from '@jupyterlab/coreutils';
+export const matlabExportPlugin: JupyterFrontEndPlugin<void> = {
+    id: '@mathworks/MLXExportPlugin',
+    autoStart: true,
+    requires: [ICommandPalette, IMainMenu, INotebookTracker, CommunicationService],
+    activate: async (
+        app: JupyterFrontEnd,
+        palette: ICommandPalette,
+        mainMenu: IMainMenu,
+        notebookTracker: INotebookTracker,
+        commService: ICommunicationService
+    ) => {
+        console.log('Activated MATLAB Export Plugin');
 
-// import { CommunicationService } from './matlabCommunicationPlugin';
-// import { ActionFactory } from './actions/actionFactory';
-// import { ActionTypes } from './actions/actionTypes';
-// import { CheckFileExistsAction } from './actions/checkFileExistsAction';
-// import { getNewFileName } from '../utils/file';
-// import { MatlabStatusAction } from './actions/matlabStatusAction';
-// import { getMatlabUrl, handleMatlabLicensing, waitForMatlabToStart } from '../utils/matlab';
-// import { NotebookInfo } from '../utils/notebook';
+        const { commands } = app;
+        const fileMenu = mainMenu.fileMenu;
 
-// export const matlabExportPlugin: JupyterFrontEndPlugin<void> = {
-//     id: '@mathworks/MLXExportPlugin',
-//     autoStart: true,
-//     requires: [ICommandPalette, IMainMenu, INotebookTracker, CommunicationService],
-//     activate: async (
-//         app: JupyterFrontEnd,
-//         palette: ICommandPalette,
-//         mainMenu: IMainMenu,
-//         notebookTracker: INotebookTracker
-//     ) => {
-//         const notebookInfo = new NotebookInfo();
-//         console.log('Notebook check ', notebookTracker.currentWidget);
-//         await notebookInfo.update(notebookTracker.currentWidget);
-//         console.log('\n \n asdf ', notebookInfo.isMatlabNotebook());
-//         const { commands } = app;
-//         const fileMenu = mainMenu.fileMenu;
+        const exportCommandPaletteItem = 'matlab-palette-item:export-to-MLX';
+        const exportCommandMenuItem = 'matlab-menu-item:export-to-MLX';
 
-//         const exportCommandPaletteItem = 'matlab-palette-item:export-to-MLX';
-//         const exportCommandMenuItem = 'matlab-menu-item:export-to-MLX';
+        // Handle current notebook if it exists
+        if (notebookTracker.currentWidget) {
+            notebookTracker.currentWidget.context.ready.then(() => {
+                notebook = notebookTracker.currentWidget;
+                isMatlabNotebook = notebook?.context.model.metadata.kernelspec?.language === 'matlab';
+            });
+        }
 
-//         // Add command to the jupyterlab palette
-//         commands.addCommand(exportCommandPaletteItem, {
-//             label: 'Save and Export Notebook: MLX',
-//             execute: async () => {
-//                 await notebookInfo.update(notebookTracker.currentWidget);
-//                 await exportHandler(notebookInfo.getCurrentFilePath());
-//             },
-//             isEnabled: () => notebookInfo.isMatlabNotebook()
-//         });
+        commands.addCommand(exportCommandPaletteItem, {
+            label: 'Save and Export Notebook: MLX',
+            execute: async () => {
+                await exportHandler(commService);
+            },
+            isEnabled: () => isMatlabNotebook
+        });
 
-//         palette.addItem({ command: exportCommandPaletteItem, category: 'File' });
+        palette.addItem({ command: exportCommandPaletteItem, category: 'File' });
 
-//         // Add command to the jupyterlab file menu
-//         let exportSubmenu: Menu | undefined;
+        // Add command to the jupyterlab file menu
+        let exportSubmenu: Menu | undefined;
 
-//         fileMenu.items.forEach(item => {
-//             if (item.type === 'submenu' && item.submenu) {
-//                 const submenu = item.submenu;
-//                 if (submenu.title.label === 'Save and Export Notebook As') {
-//                     exportSubmenu = submenu;
-//                 }
-//             }
-//         });
+        fileMenu.items.forEach(item => {
+            if (item.type === 'submenu' && item.submenu) {
+                const submenu = item.submenu;
+                if (submenu.title.label === 'Save and Export Notebook As') {
+                    exportSubmenu = submenu;
+                }
+            }
+        });
 
-//         if (exportSubmenu) {
-//             commands.addCommand(exportCommandMenuItem, {
-//                 label: 'MLX',
-//                 execute: async () => {
-//                     console.log('notebook check .....', notebookTracker.currentWidget);
-//                     await notebookInfo.update(notebookTracker.currentWidget);
-//                     await exportHandler(notebookInfo.getCurrentFilePath());
-//                 },
-//                 isEnabled: () => notebookInfo.isMatlabNotebook()
-//             });
-//             exportSubmenu.addItem({ command: exportCommandMenuItem });
-//         }
+        if (exportSubmenu) {
+            commands.addCommand(exportCommandMenuItem, {
+                label: 'MLX',
+                execute: async () => {
+                    await exportHandler(commService);
+                },
+                isEnabled: () => isMatlabNotebook
+            });
+            exportSubmenu.addItem({ command: exportCommandMenuItem });
+        }
 
-//         // Add state change listener
-//         notebookTracker.currentChanged.connect(() => {
-//             // Will disable commands for export if there's no active IPYNB file open.
-//             commands.notifyCommandChanged(exportCommandPaletteItem);
-//             if (exportSubmenu) {
-//                 commands.notifyCommandChanged(exportCommandMenuItem);
-//             }
-//         });
-//         console.log('MATLAB Export Plugin activated!');
-//     }
-// };
+        // Set up listeners for current and future notebooks
+        notebookTracker.widgetAdded.connect((_, notebookPanel) => {
+            notebookPanel.context.ready.then(() => {
+                updateState(notebookPanel);
+            });
+        });
 
-// // TODO: Need to ensure that the IPYNB file has matlab language in it and not python or some other language
-// async function exportHandler (filePath: string | undefined) : Promise<void> {
-//     console.log('Exporting to MLX');
-//     if (filePath) {
-//         const currentDir = PathExt.dirname(filePath);
-//         const currentFileNameWithoutExtension = PathExt.basename(filePath, PathExt.extname(filePath));
-//         const mlxFileName = `${currentFileNameWithoutExtension}.mlx`;
-//         let finalMlxFilePath = PathExt.join(currentDir, mlxFileName);
+        // Add state change listener to update whether commands should be enabled or disabled
+        notebookTracker.currentChanged.connect(() => {
+            updateState(notebookTracker.currentWidget);
+            if (commands.hasCommand(exportCommandPaletteItem)) {
+                commands.notifyCommandChanged(exportCommandPaletteItem);
+                commands.notifyCommandChanged(exportCommandMenuItem);
+            }
+        });
+    }
+};
 
-//         const checkFileExistsAction = ActionFactory.createAction(ActionTypes.CHECK_FILE_EXISTS, true);
-//         await checkFileExistsAction.execute({ mlxFilePath: finalMlxFilePath });
+// Function to handle the export operation
+async function exportHandler (commService: ICommunicationService): Promise<void> {
+    console.log('Exporting to MLX', notebook);
+    if (!notebook) {
+        return;
+    }
+    const comm = commService.getComm(notebook.id);
+    const finalMlxFilePath = await getFileNameForConversion(notebook, comm);
+    if (!finalMlxFilePath) {
+        return; // User aborted the conversion, so return early..
+    }
+    await startMatlab(notebook, comm);
+    await convertToMLX(notebook, comm, finalMlxFilePath);
+}
 
-//         const fileAlreadyExists = CheckFileExistsAction.getFileExistsStatus();
-
-//         if (fileAlreadyExists) {
-//             const newFileName = await getNewFileName(currentFileNameWithoutExtension);
-//             if (newFileName) {
-//                 finalMlxFilePath = PathExt.join(currentDir, newFileName);
-//             } else {
-//                 return; // User neither provided a new file name nor chose to overwrite, so return early
-//             }
-//         }
-
-//         // Send StartMatlabProxy action to kernel. This would be a no-op if matlab-proxy is already up
-//         const startMatlabProxyAction = ActionFactory.createAction(ActionTypes.START_MATLAB_PROXY, true);
-//         await startMatlabProxyAction.execute(null);
-
-//         // Get status of matlab-proxy
-//         const matlabStatusAction = ActionFactory.createAction(ActionTypes.MATLAB_STATUS, true);
-//         await matlabStatusAction.execute(null);
-
-//         let status = MatlabStatusAction.getStatus();
-
-//         if (!status.isLicensed) {
-//             await handleMatlabLicensing(getMatlabUrl());
-
-//             // After sign in, re-fetch matlab status for the updated status
-//             await matlabStatusAction.execute(null);
-//             status = MatlabStatusAction.getStatus();
-//         }
-
-//         if (status.status === 'starting') {
-//             await waitForMatlabToStart(1000);
-//         }
-
-//         const convertAction = ActionFactory.createAction(ActionTypes.CONVERT, true);
-//         await convertAction.execute({
-//             action: ActionTypes.CONVERT,
-//             ipynbFilePath: filePath,
-//             mlxFilePath: finalMlxFilePath
-//         });
-//     }
-// }
+function updateState (notebookPanel: NotebookPanel | null) {
+    notebook = notebookPanel;
+    isMatlabNotebook = notebook?.context.model.metadata.kernelspec?.language === 'matlab';
+}

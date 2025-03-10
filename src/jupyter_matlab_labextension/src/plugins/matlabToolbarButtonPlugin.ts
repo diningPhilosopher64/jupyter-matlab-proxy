@@ -32,9 +32,6 @@ export const matlabToolbarButtonPlugin: JupyterFrontEndPlugin<void> = {
         app: JupyterFrontEnd, commService: ICommunicationService, notebookTracker: INotebookTracker
     ) => {
         console.log('Activated toolbar plugin');
-        // const matlabToolbarButton = new MatlabToolbarButtonExtension();
-        // app.docRegistry.addWidgetExtension('Notebook', matlabToolbarButton);
-
         const handleNotebook = (notebook: NotebookPanel) => {
             const context = notebook.context;
 
@@ -100,7 +97,7 @@ export const matlabToolbarButtonPlugin: JupyterFrontEndPlugin<void> = {
                 // Add the button to the notebook toolbar
                 notebook.toolbar.insertItem(10, 'openMatlabButton', matlabToolbarButton);
 
-                // Add cleanup when notebook is disposed
+                // Cleanup when notebook is disposed
                 notebook.disposed.connect(() => {
                     menu.dispose();
                     matlabToolbarButton.dispose();

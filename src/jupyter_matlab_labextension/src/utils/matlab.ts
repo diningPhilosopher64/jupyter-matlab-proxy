@@ -117,12 +117,7 @@ export async function startMatlab (notebook:NotebookPanel, comm: ICommunicationC
 }
 
 export async function convertAndOpenMatlab (notebook: NotebookPanel, comm: ICommunicationChannel, finalMlxFilePath: string): Promise<void> {
-    const convertAction = ActionFactory.createAction(ActionTypes.CONVERT, true, notebook);
-    await convertAction.execute({
-        action: ActionTypes.CONVERT,
-        ipynbFilePath: notebook.context.path,
-        mlxFilePath: finalMlxFilePath
-    }, comm);
+    await convertToMLX(notebook, comm, finalMlxFilePath);
 
     // Conversion successful, proceed with opening MATLAB
     Notification.info('Opening MATLAB...', { autoClose: 2000 });
@@ -132,4 +127,13 @@ export async function convertAndOpenMatlab (notebook: NotebookPanel, comm: IComm
 
     const editAction = ActionFactory.createAction(ActionTypes.EDIT, true, notebook);
     await editAction.execute({ action: ActionTypes.EDIT, mlxFilePath: finalMlxFilePath }, comm);
+}
+
+export async function convertToMLX (notebook: NotebookPanel, comm: ICommunicationChannel, finalMlxFilePath: string): Promise<void> {
+    const convertAction = ActionFactory.createAction(ActionTypes.CONVERT, true, notebook);
+    await convertAction.execute({
+        action: ActionTypes.CONVERT,
+        ipynbFilePath: notebook.context.path,
+        mlxFilePath: finalMlxFilePath
+    }, comm);
 }
