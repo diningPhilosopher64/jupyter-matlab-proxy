@@ -50,7 +50,7 @@ class ActionFactory:
 
         elif ActionTypes.START_MATLAB_PROXY.value == action_type:
             return StartMatlabProxyAction(kernel)
-        
+
         elif ActionTypes.NUDGE.value == action_type:
             return NudgeAction(kernel)
 

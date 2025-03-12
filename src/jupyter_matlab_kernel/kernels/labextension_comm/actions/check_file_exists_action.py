@@ -31,8 +31,6 @@ class CheckFileExistsAction(ActionCommand):
                 }
             )
 
-            raise error
-
         else:
             comm.send(
                 {
@@ -41,6 +39,4 @@ class CheckFileExistsAction(ActionCommand):
                     "error": None,
                 }
             )
-            self.log.info(
-                f"\n \nFile exists : {Path(file_to_check).expanduser().resolve().exists()}"
-            )
+            self.log.debug(f"File exists at {Path(file_to_check)}")

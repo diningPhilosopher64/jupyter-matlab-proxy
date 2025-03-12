@@ -12,19 +12,5 @@ class NudgeAction(ActionCommand):
         pass
 
     async def execute(self, comm, msg):
-        try:            
-            comm.send(
-                {
-                    "action": ActionTypes.NUDGE.value,
-                    "msg": msg
-                   
-                }
-            )
-        except Exception as err:
-            self.log.error(f"Error sending Nudge: {err}")
-            comm.send(
-                {
-                    "action": ActionTypes.NUDGE.value,
-                    "error": str(err),
-                }
-            )
+        comm.send({"action": ActionTypes.NUDGE.value, "msg": msg})
+

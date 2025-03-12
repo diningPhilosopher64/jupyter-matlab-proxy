@@ -2,7 +2,6 @@
 
 from . import ActionCommand, ActionTypes
 from pathlib import Path
-from jupyter_matlab_kernel.mwi_comm_helpers import MWICommHelper
 
 
 class ConvertAction(ActionCommand):
@@ -38,8 +37,8 @@ class ConvertAction(ActionCommand):
         ipynb_file_path = Path(data["data"]["ipynbFilePath"]).expanduser()
         mlx_file_path = Path(data["data"]["mlxFilePath"]).expanduser()
 
-        self.log.info(f"Received IPYNB file for conversion: {ipynb_file_path}")
-        self.log.info(f"MLX file will be generated at:{mlx_file_path}")
+        self.log.debug(f"Received IPYNB file for conversion: {ipynb_file_path}")
+        self.log.debug(f"MLX file will be generated at:{mlx_file_path}")
 
         try:
             code = self.get_code(ipynb_file_path, mlx_file_path)
@@ -60,6 +59,7 @@ class ConvertAction(ActionCommand):
                 )
 
             else:
+                self.log.debug("Successfully converted IPYNB file.")
                 comm.send(
                     {
                         "action": ActionTypes.CONVERT.value,

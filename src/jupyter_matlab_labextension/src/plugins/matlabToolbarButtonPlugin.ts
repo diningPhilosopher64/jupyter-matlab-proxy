@@ -33,14 +33,7 @@ export const matlabToolbarButtonPlugin: JupyterFrontEndPlugin<void> = {
     ) => {
         console.log('Activated toolbar plugin');
         const handleNotebook = (notebook: NotebookPanel) => {
-            const context = notebook.context;
-
-            if (!context) {
-                console.log('\n\n Context not ready ');
-                return;
-            }
-
-            if (context.model.metadata.kernelspec?.language === 'matlab') {
+            if (notebook.context.model.metadata.kernelspec?.language === 'matlab') {
                 const openAsMlxInMatlabCommand = {
                     label: 'Open as MLX in MATLAB',
                     icon: matlabIcon,

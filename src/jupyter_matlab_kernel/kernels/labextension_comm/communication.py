@@ -60,6 +60,6 @@ class LabExtensionCommunication:
         else:
             self.log.warning(f"Attempted to close unknown comm_id: {comm_id}")
 
-    async def send_message(self, action_type, data):        
+    async def send_message(self, action_type, data):
         action = ActionFactory.create_action(action_type, self.kernel)
         await action.execute(self.comm, data)
