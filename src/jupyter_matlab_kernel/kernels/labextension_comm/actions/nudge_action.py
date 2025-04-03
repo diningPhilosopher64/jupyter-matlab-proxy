@@ -13,4 +13,3 @@ class NudgeAction(ActionCommand):
 
     async def execute(self, comm, msg):
         comm.send({"action": ActionTypes.NUDGE.value, "msg": msg})
-

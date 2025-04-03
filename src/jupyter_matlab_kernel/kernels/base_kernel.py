@@ -156,6 +156,8 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
         self.shell_handlers["comm_msg"] = self.labext_comm.comm_msg
         self.shell_handlers["comm_close"] = self.labext_comm.comm_close
 
+        self.allowed_to_nudge_user = True
+
     # ipykernel Interface API
     # https://ipython.readthedocs.io/en/stable/development/wrapperkernels.html
 
@@ -463,6 +465,8 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
             out (dict): A dictionary containing the type of output and the content of the output.
         """
         msg_type = out["type"]
+        self.nudge_user_if_required(out)
+
         if msg_type == "execute_result":
             assert len(out["mimetype"]) == len(out["value"])
             response = {
@@ -471,22 +475,51 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
                 "metadata": {},
                 "execution_count": self.execution_count,
             }
-            if out["mimetype"][0] == "image/png":
-                self.log.info(f"\n \n erceived image type sending nudge \n")
+        else:
+            response = out["content"]
+
+        self.send_response(self.iopub_socket, msg_type, response)
+
+    def nudge_user_if_required(self, out):
+        if out["type"] == "execute_result":
+            mimetype = out["mimetype"][0]
+
+            if mimetype == "image/png":
+                self.log.debug(
+                    "About to display image type. Nudge user to open notebook in MATLAB."
+                )
                 task = self.labext_comm.send_message(
-                    ActionTypes.NUDGE,
+                    ActionTypes.NUDGE.value,
                     "You can interact with a figure in MATLAB. Would you like to open the notebook in MATLAB ?",
                 )
                 asyncio.create_task(task)
+
         else:
+            # out["type"] if not 'execute_result' will be 'stream'
             response = out["content"]
-            if "name" in response and response["name"] == "stderr":
+            # Check if there's an error generated from user executed code
+            if response["name"] == "stderr":
+                err_text = response["text"]
+
+                # TODO: Need more error's to capture.
+                # TODO: Export errors from matlab-proxy-manager to use them here ?
+                non_user_error_msgs = [
+                    "Error: MATLAB Kernel could not start the MATLAB proxy process via proxy manager",  # When mpm fails to start mp
+                    "Failed to execute. Operation may have interrupted by user.",  # When cell execution is interrupted by the user
+                ]
+
+                for err_msg in non_user_error_msgs:
+                    if err_msg in err_text:
+                        self.log.debug(
+                            "Error is not a user generated error so not proceeding with a nudge"
+                        )
+                        return
+
                 task = self.labext_comm.send_message(
-                    ActionTypes.NUDGE,
+                    ActionTypes.NUDGE.value,
                     "To know more about the error would you like to open the notebook in MATLAB ?",
                 )
                 asyncio.create_task(task)
-        self.send_response(self.iopub_socket, msg_type, response)
 
     async def perform_startup_checks(
         self, jupyter_base_url: str = None, matlab_proxy_base_url: str = None

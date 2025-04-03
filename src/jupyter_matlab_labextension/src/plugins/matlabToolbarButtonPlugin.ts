@@ -8,7 +8,8 @@ import {
     JupyterFrontEndPlugin
 } from '@jupyterlab/application';
 import {
-    ToolbarButton
+    ToolbarButton,
+    Notification
 } from '@jupyterlab/apputils';
 
 import {
@@ -23,6 +24,7 @@ import { matlabIcon } from '../icons';
 import { CommunicationService, ICommunicationService } from './matlabCommunicationPlugin';
 import { convertAndOpenMatlab, getMatlabUrl, startMatlab } from '../utils/matlab';
 import { getFileNameForConversion } from '../utils/file';
+import { NotebookInfo } from '../utils/notebook';
 
 export const matlabToolbarButtonPlugin: JupyterFrontEndPlugin<void> = {
     id: '@mathworks/matlabToolbarButtonPlugin',
@@ -33,7 +35,10 @@ export const matlabToolbarButtonPlugin: JupyterFrontEndPlugin<void> = {
     ) => {
         console.log('Activated toolbar plugin');
         const handleNotebook = (notebook: NotebookPanel) => {
-            if (notebook.context.model.metadata.kernelspec?.language === 'matlab') {
+            const notebookInfo = new NotebookInfo();
+            notebookInfo.update(notebook);
+            if (notebookInfo.isMatlabNotebook()) {
+                // if (notebook.context.model.metadata.kernelspec?.language === 'matlab') {
                 const openAsMlxInMatlabCommand = {
                     label: 'Open as MLX in MATLAB',
                     icon: matlabIcon,
@@ -46,6 +51,30 @@ export const matlabToolbarButtonPlugin: JupyterFrontEndPlugin<void> = {
                         */
 
                         notebook.sessionContext.ready.then(async () => {
+                            // Update the state of notebook
+                            notebookInfo.update(notebook);
+
+                            if (notebookInfo.isBusy()) {
+                                Notification.info('Kernel is busy ', {
+                                    autoClose: 5000,
+                                    actions: [
+                                        {
+                                            label: 'Wait',
+                                            callback: async () => {
+                                                await notebookInfo.waitForIdleStatus();
+                                            }
+                                        },
+                                        {
+                                            label: 'Interrupt',
+                                            callback: () => {
+                                                notebookInfo.interrupt();
+                                                console.log('Interrupt clicked');
+                                            }
+                                        }
+                                    ]
+                                });
+                            }
+
                             const comm = commService.getComm(notebook.id);
                             const finalMlxFilePath = await getFileNameForConversion(notebook, comm);
                             if (!finalMlxFilePath) {

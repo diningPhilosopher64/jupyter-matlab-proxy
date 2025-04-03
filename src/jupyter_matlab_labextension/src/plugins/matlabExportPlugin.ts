@@ -14,6 +14,7 @@ import { Menu } from '@lumino/widgets';
 import { CommunicationService, ICommunicationService } from './matlabCommunicationPlugin';
 import { getFileNameForConversion } from '../utils/file';
 import { convertToMLX, startMatlab } from '../utils/matlab';
+import { NotebookInfo } from '../utils/notebook';
 
 let notebook: NotebookPanel | null = null;
 let isMatlabNotebook = false;
@@ -78,16 +79,18 @@ export const matlabExportPlugin: JupyterFrontEndPlugin<void> = {
             exportSubmenu.addItem({ command: exportCommandMenuItem });
         }
 
+        const notebookInfo = new NotebookInfo();
+
         // Set up listeners for current and future notebooks
         notebookTracker.widgetAdded.connect((_, notebookPanel) => {
             notebookPanel.context.ready.then(() => {
-                updateState(notebookPanel);
+                notebookInfo.update(notebookPanel);
             });
         });
 
         // Add state change listener to update whether commands should be enabled or disabled
         notebookTracker.currentChanged.connect(() => {
-            updateState(notebookTracker.currentWidget);
+            notebookInfo.update(notebookTracker.currentWidget);
             if (commands.hasCommand(exportCommandPaletteItem)) {
                 commands.notifyCommandChanged(exportCommandPaletteItem);
                 commands.notifyCommandChanged(exportCommandMenuItem);
@@ -111,7 +114,7 @@ async function exportHandler (commService: ICommunicationService): Promise<void>
     await convertToMLX(notebook, comm, finalMlxFilePath);
 }
 
-function updateState (notebookPanel: NotebookPanel | null) {
-    notebook = notebookPanel;
-    isMatlabNotebook = notebook?.context.model.metadata.kernelspec?.language === 'matlab';
-}
+// function updateState (notebookPanel: NotebookPanel | null) {
+//     notebook = notebookPanel;
+//     isMatlabNotebook = notebook?.context.model.metadata.kernelspec?.language === 'matlab';
+// }

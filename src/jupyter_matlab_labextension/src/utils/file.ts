@@ -8,11 +8,11 @@ import { ActionFactory } from '../plugins/actions/actionFactory';
 import { ActionTypes } from '../plugins/actions/actionTypes';
 import { CheckFileExistsAction } from '../plugins/actions/checkFileExistsAction';
 
-async function getNewFileName (currentFileName: string): Promise<string | null> {
+async function getNewFileName (currentFileName: string, mlxFileName: string): Promise<string | null> {
     while (true) {
         const result = await showDialog({
             title: 'File already exists',
-            body: `A file named "${currentFileName}" already exists. Do you want to overwrite it or choose a new name?`,
+            body: `A file named "${mlxFileName}" already exists. Do you want to overwrite it or choose a new name?`,
             buttons: [
                 Dialog.cancelButton(),
                 Dialog.okButton({ label: 'Overwrite' }),
@@ -69,7 +69,7 @@ export async function getFileNameForConversion (notebook: NotebookPanel, comm: I
     const fileAlreadyExists = CheckFileExistsAction.getFileExistsStatus();
 
     if (fileAlreadyExists) {
-        const newFileName = await getNewFileName(notebookName);
+        const newFileName = await getNewFileName(notebookName, mlxFileName);
         console.log('New file name is ', newFileName);
         if (newFileName) {
             finalMlxFilePath = PathExt.join(currentDir, newFileName);

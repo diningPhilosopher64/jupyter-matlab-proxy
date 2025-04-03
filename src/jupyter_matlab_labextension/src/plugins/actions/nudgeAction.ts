@@ -31,7 +31,12 @@ export class NudgeAction extends BaseAction {
                 {
                     label: 'Open',
                     callback: async () => {
-                        console.log('Open clicked');
+                        Notification.info('This requires the file to be converted to mlx before opening MATLAB', {
+                            autoClose: 5000
+                        });
+
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
                         const finalMlxFilePath = await getFileNameForConversion(this.notebook, comm);
                         if (!finalMlxFilePath) {
                             return; // User aborted the conversion, so return early..
