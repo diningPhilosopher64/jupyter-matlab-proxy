@@ -60,6 +60,7 @@
     "@jupyterlab/coreutils": "^6.0.0",
     "@jupyterlab/docregistry": "^4.0.0",
     "@jupyterlab/launcher": "^4.0.0",
+    "@jupyterlab/mainmenu": "^4.3.4",
     "@jupyterlab/notebook": "^4.0.0",
     "@jupyterlab/ui-components": "^4.0.0",
     "@lumino/coreutils": "^2.0.0",
@@ -68,6 +69,7 @@
   "devDependencies": {
     "@jupyterlab/builder": ">=4.0.0",
     "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.5",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "cross-spawn": "^6.0.6",
@@ -83,6 +85,7 @@
     "prettier": "^2.8.7",
     "rimraf": "^4.4.1",
     "semver": ">=5.7.2",
+    "stylelint": "^16.18.0",
     "ts-jest": "^29.2.5",
     "typescript": "~5.0.2",
     "ws": "^7.5.10",
@@ -110,5 +113,6 @@
         "jlpm clean:all"
       ]
     }
-  }
+  },
+  "packageManager": "yarn@4.5.3"
 }

@@ -14,17 +14,21 @@ import { ILauncher } from '@jupyterlab/launcher';
 
 import { ReadonlyPartialJSONObject } from '@lumino/coreutils';
 
-import { newMFileIcon, matlabIcon } from './icons';
+import { newMFileIcon, matlabIcon } from '../icons';
 
 const FACTORY = 'Editor';
 const PALETTE_CATEGORY = 'Other';
 const command = 'matlab:new-matlab-file';
 
-function registerMFiles (app: JupyterFrontEnd, launcher: ILauncher | null, palette: ICommandPalette | null) {
+function registerMFiles (
+    app: JupyterFrontEnd,
+    launcher: ILauncher | null,
+    palette: ICommandPalette | null
+) {
     const { commands } = app;
     const createNewMatlabFile = async (args: ReadonlyPartialJSONObject) => {
-        /** Get the directory in which the MATLAB file must be created;
-             * otherwise take the current filebrowser directory. */
+    /** Get the directory in which the MATLAB file must be created;
+     * otherwise take the current filebrowser directory. */
         const cwd = args.cwd;
 
         /** Create a new untitled MATLAB file. */

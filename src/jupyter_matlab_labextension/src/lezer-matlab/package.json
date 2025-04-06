@@ -18,6 +18,7 @@
   "devDependencies": {
     "@lezer/generator": "^1.0.0",
     "@rollup/plugin-node-resolve": "^15.3.0",
+    "cpy": "^11.1.0",
     "mocha": "^10.2.0",
     "rollup": "^4.22.4"
   },
@@ -27,9 +28,9 @@
     "@lezer/lr": "^1.0.0"
   },
   "scripts": {
-    "build": "lezer-generator src/matlab.grammar -o src/parser && rollup -c && npm run copy-lezer-files-to-build-on-windows",
+    "build": "lezer-generator src/matlab.grammar -o src/parser",
     "build-debug": "lezer-generator src/matlab.grammar --names -o src/parser && rollup -c && npm run copy-lezer-files-to-build-on-windows",
-    "copy-lezer-files-to-build-on-windows": "copy src\\*.js dist\\ || true",
+    "copy-lezer-files-to-build-on-windows": "cpy src\\*.js dist\\ || true",
     "prepare": "npm run build",
     "test": "mocha test/test-*.js"
   }
