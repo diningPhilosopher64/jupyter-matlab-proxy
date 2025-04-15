@@ -63,7 +63,7 @@ implements
                 const kernel = panel.sessionContext.session?.kernel;
                 // If kernel is available, create channel and set up listeners.
                 if (!kernel) {
-                    console.log('Kernel not ready!');
+                    console.error("Kernel not ready! Can't create communication channel");
                     return new DisposableDelegate(() => {});
                 }
 
@@ -71,11 +71,11 @@ implements
                 await notebookInfo.update(panel);
 
                 if (!notebookInfo.isMatlabNotebook()) {
-                    console.log('Not a MATLAB notebook, skipping communication setup');
+                    console.debug('Not a MATLAB notebook, skipping communication setup');
                     return new DisposableDelegate(() => {});
                 }
 
-                console.log('MATLAB Communication plugin activated');
+                console.log('MATLAB Communication plugin activated for ', panel.id);
 
                 // Create a unique channel name for this notebook
                 const channelName =
@@ -88,28 +88,25 @@ implements
 
                 comm.open()
                     .done.then(() => {
-                        console.log('Communication channel opened successfully');
+                        console.debug('Communication channel opened successfully');
                     })
                     .catch((error) => {
                         console.error('Error opening communication channel', error);
                     });
 
-                console.log('Comm id ', comm.commId);
-
                 // Listen for messages from the kernel
                 comm.onMsg = (msg: KernelMessage.ICommMsgMsg) => {
                     const data = msg.content.data as CommunicationData;
-                    console.log('Recieved data from ', data);
+                    console.debug('Recieved data from kernel: ', data);
                 };
 
                 // Handle comm close
                 comm.onClose = (msg) => {
-                    console.log('Comm closed:', msg);
+                    console.debug('Comm closed:', msg);
                 };
 
-                // this._comm = comm;
                 this._comms.set(panel.id, comm);
-                console.log('Comm creawted with props ', comm.commId, comm.targetName);
+                console.log('Communication channel created with ID: ', comm.commId, ' and target name ', comm.targetName);
 
                 // Clean up when notebook is disposed
                 panel.disposed.connect(() => {

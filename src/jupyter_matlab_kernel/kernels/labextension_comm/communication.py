@@ -13,7 +13,7 @@ class LabExtensionCommunication:
         content = msg["content"]
         comm_id = content["comm_id"]
         target_name = content["target_name"]
-        self.log.info(
+        self.log.debug(
             f"Received comm_open message with id: {comm_id} and target_name: {target_name}"
         )
         self.comm = Comm(comm_id=comm_id, primary=False, target_name=target_name)
@@ -42,7 +42,7 @@ class LabExtensionCommunication:
         content = msg["content"]
         comm_id = content["comm_id"]
 
-        self.log.info(f"Comm closed with id: {comm_id}. Content is {content}")
+        self.log.info(f"Comm closed with id: {comm_id}")
 
         if self.comm and self.comm.comm_id == comm_id:
             self.comm = None
