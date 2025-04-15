@@ -14,7 +14,6 @@ import {
 import { KernelMessage } from '@jupyterlab/services';
 import { JSONObject, JSONValue, Token } from '@lumino/coreutils';
 import { DisposableDelegate } from '@lumino/disposable';
-import { ActionFactory } from './actions/actionFactory';
 import { NotebookInfo } from '../utils/notebook';
 
 // Add more action types as needed
@@ -87,8 +86,7 @@ implements
                 );
                 const comm = kernel.createComm(channelName);
 
-                comm
-                    .open()
+                comm.open()
                     .done.then(() => {
                         console.log('Communication channel opened successfully');
                     })
@@ -102,12 +100,6 @@ implements
                 comm.onMsg = (msg: KernelMessage.ICommMsgMsg) => {
                     const data = msg.content.data as CommunicationData;
                     console.log('Recieved data from ', data);
-
-                    const actionType = data!.action as string;
-                    const action = ActionFactory.createAction(actionType, false, panel);
-
-                    // Execute onMsg handler for the current action after receiving the response from the kernel
-                    action.onMsg(data, comm);
                 };
 
                 // Handle comm close
