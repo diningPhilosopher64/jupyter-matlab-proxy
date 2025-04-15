@@ -1941,7 +1941,7 @@ __metadata:
   version: 1.0.3
   resolution: "@keyv/serialize@npm:1.0.3"
   dependencies:
-    buffer: ^6.0.3
+    buffer: "npm:^6.0.3"
   checksum: 5f7b90e8ae76d2a1850a1982cf382aea3ff7cef1f82bea793657e47d8f700609597f317607de07245b40c30b764a19fc7d4efa177d4dc42f6ed4d0a7b5f4e173
   languageName: node
   linkType: hard
@@ -3468,8 +3468,8 @@ __metadata:
   version: 6.0.3
   resolution: "buffer@npm:6.0.3"
   dependencies:
-    base64-js: ^1.3.1
-    ieee754: ^1.2.1
+    base64-js: "npm:^1.3.1"
+    ieee754: "npm:^1.2.1"
   checksum: 5ad23293d9a731e4318e420025800b42bf0d264004c0286c8cc010af7a270c7a0f6522e84f54b9ad65cbd6db20b8badbfd8d2ebf4f80fa03dab093b89e68c3f9
   languageName: node
   linkType: hard
@@ -3507,8 +3507,8 @@ __metadata:
   version: 1.8.10
   resolution: "cacheable@npm:1.8.10"
   dependencies:
-    hookified: ^1.8.1
-    keyv: ^5.3.2
+    hookified: "npm:^1.8.1"
+    keyv: "npm:^5.3.2"
   checksum: 8713ffcc31d616e2d7b6c38ffa887c5eb032eb7f2cd9315188d7b0d78d2c23a5b0d5d9f6ece8390001d5f7742b25dbb475d6209cbe138a9688dc4e8ce0903428
   languageName: node
   linkType: hard
@@ -3801,10 +3801,10 @@ __metadata:
   version: 9.0.0
   resolution: "cosmiconfig@npm:9.0.0"
   dependencies:
-    env-paths: ^2.2.1
-    import-fresh: ^3.3.0
-    js-yaml: ^4.1.0
-    parse-json: ^5.2.0
+    env-paths: "npm:^2.2.1"
+    import-fresh: "npm:^3.3.0"
+    js-yaml: "npm:^4.1.0"
+    parse-json: "npm:^5.2.0"
   peerDependencies:
     typescript: ">=4.9.5"
   peerDependenciesMeta:
@@ -3897,8 +3897,8 @@ __metadata:
   version: 3.1.0
   resolution: "css-tree@npm:3.1.0"
   dependencies:
-    mdn-data: 2.12.2
-    source-map-js: ^1.0.1
+    mdn-data: "npm:2.12.2"
+    source-map-js: "npm:^1.0.1"
   checksum: 6b8c713c22b7223c0e71179575c3bbf421a13a61641204645d6c3b560bdc4ffed8d676220bbcb83777e07b46a934ec3b1c629aa61d57422c196c8e2e7417ee1a
   languageName: node
   linkType: hard
@@ -4865,7 +4865,7 @@ __metadata:
   version: 10.0.8
   resolution: "file-entry-cache@npm:10.0.8"
   dependencies:
-    flat-cache: ^6.1.8
+    flat-cache: "npm:^6.1.8"
   checksum: 832e9394c05b1484a38431a1061cbda6bef7597a0b3d9ddefd7ae9aa5f935cdb720e98066bd7e29cf2395b88d4ff42ce24860e808b74fb3a87dab07b8b98f04a
   languageName: node
   linkType: hard
@@ -4939,9 +4939,9 @@ __metadata:
   version: 6.1.8
   resolution: "flat-cache@npm:6.1.8"
   dependencies:
-    cacheable: ^1.8.9
-    flatted: ^3.3.3
-    hookified: ^1.8.1
+    cacheable: "npm:^1.8.9"
+    flatted: "npm:^3.3.3"
+    hookified: "npm:^1.8.1"
   checksum: 7c26d536f21249e487eed8f21829b13eb114d4e07de239ce7300c995c80c3e704f78e4a63d7e75a63c28dc47b02c05e670c3fc745bbfd2b238d4aea0e4e4b3d2
   languageName: node
   linkType: hard
@@ -5232,7 +5232,7 @@ __metadata:
   version: 2.0.0
   resolution: "global-modules@npm:2.0.0"
   dependencies:
-    global-prefix: ^3.0.0
+    global-prefix: "npm:^3.0.0"
   checksum: d6197f25856c878c2fb5f038899f2dca7cbb2f7b7cf8999660c0104972d5cfa5c68b5a0a77fa8206bb536c3903a4615665acb9709b4d80846e1bb47eaef65430
   languageName: node
   linkType: hard
@@ -5241,9 +5241,9 @@ __metadata:
   version: 3.0.0
   resolution: "global-prefix@npm:3.0.0"
   dependencies:
-    ini: ^1.3.5
-    kind-of: ^6.0.2
-    which: ^1.3.1
+    ini: "npm:^1.3.5"
+    kind-of: "npm:^6.0.2"
+    which: "npm:^1.3.1"
   checksum: 8a82fc1d6f22c45484a4e34656cc91bf021a03e03213b0035098d605bfc612d7141f1e14a21097e8a0413b4884afd5b260df0b6a25605ce9d722e11f1df2881d
   languageName: node
   linkType: hard
@@ -5507,8 +5507,8 @@ __metadata:
   version: 3.3.1
   resolution: "import-fresh@npm:3.3.1"
   dependencies:
-    parent-module: ^1.0.0
-    resolve-from: ^4.0.0
+    parent-module: "npm:^1.0.0"
+    resolve-from: "npm:^4.0.0"
   checksum: a06b19461b4879cc654d46f8a6244eb55eb053437afd4cbb6613cad6be203811849ed3e4ea038783092879487299fda24af932b86bdfff67c9055ba3612b8c87
   languageName: node
   linkType: hard
@@ -6640,7 +6640,7 @@ __metadata:
   version: 5.3.2
   resolution: "keyv@npm:5.3.2"
   dependencies:
-    "@keyv/serialize": ^1.0.3
+    "@keyv/serialize": "npm:^1.0.3"
   checksum: 2e70f14d4b44a70a530ca2d4d6bf497e3df0bfe815a1cce01f7ad658450513a9206a1d9c3bb3ce22ae338f796755af05eb7d61967c076ceab153470d881fa9f4
   languageName: node
   linkType: hard
@@ -7691,8 +7691,8 @@ __metadata:
   version: 7.1.0
   resolution: "postcss-selector-parser@npm:7.1.0"
   dependencies:
-    cssesc: ^3.0.0
-    util-deprecate: ^1.0.2
+    cssesc: "npm:^3.0.0"
+    util-deprecate: "npm:^1.0.2"
   checksum: 1300e7871dd60a5132ee5462cc6e94edd4f3df28462b2495ca9ff025bd83768a908e892a18fde62cae63ff63524641baa6d58c64120f04fe6884b916663ce737
   languageName: node
   linkType: hard
@@ -7719,9 +7719,9 @@ __metadata:
   version: 8.5.3
   resolution: "postcss@npm:8.5.3"
   dependencies:
-    nanoid: ^3.3.8
-    picocolors: ^1.1.1
-    source-map-js: ^1.2.1
+    nanoid: "npm:^3.3.8"
+    picocolors: "npm:^1.1.1"
+    source-map-js: "npm:^1.2.1"
   checksum: da574620eb84ff60e65e1d8fc6bd5ad87a19101a23d0aba113c653434161543918229a0f673d89efb3b6d4906287eb04b957310dbcf4cbebacad9d1312711461
   languageName: node
   linkType: hard
@@ -8366,9 +8366,9 @@ __metadata:
   version: 4.0.0
   resolution: "slice-ansi@npm:4.0.0"
   dependencies:
-    ansi-styles: ^4.0.0
-    astral-regex: ^2.0.0
-    is-fullwidth-code-point: ^3.0.0
+    ansi-styles: "npm:^4.0.0"
+    astral-regex: "npm:^2.0.0"
+    is-fullwidth-code-point: "npm:^3.0.0"
   checksum: 4a82d7f085b0e1b070e004941ada3c40d3818563ac44766cca4ceadd2080427d337554f9f99a13aaeb3b4a94d9964d9466c807b3d7b7541d1ec37ee32d308756
   languageName: node
   linkType: hard
@@ -8678,44 +8678,44 @@ __metadata:
   version: 16.18.0
   resolution: "stylelint@npm:16.18.0"
   dependencies:
-    "@csstools/css-parser-algorithms": ^3.0.4
-    "@csstools/css-tokenizer": ^3.0.3
-    "@csstools/media-query-list-parser": ^4.0.2
-    "@csstools/selector-specificity": ^5.0.0
-    "@dual-bundle/import-meta-resolve": ^4.1.0
-    balanced-match: ^2.0.0
-    colord: ^2.9.3
-    cosmiconfig: ^9.0.0
-    css-functions-list: ^3.2.3
-    css-tree: ^3.1.0
-    debug: ^4.3.7
-    fast-glob: ^3.3.3
-    fastest-levenshtein: ^1.0.16
-    file-entry-cache: ^10.0.7
-    global-modules: ^2.0.0
-    globby: ^11.1.0
-    globjoin: ^0.1.4
-    html-tags: ^3.3.1
-    ignore: ^7.0.3
-    imurmurhash: ^0.1.4
-    is-plain-object: ^5.0.0
-    known-css-properties: ^0.35.0
-    mathml-tag-names: ^2.1.3
-    meow: ^13.2.0
-    micromatch: ^4.0.8
-    normalize-path: ^3.0.0
-    picocolors: ^1.1.1
-    postcss: ^8.5.3
-    postcss-resolve-nested-selector: ^0.1.6
-    postcss-safe-parser: ^7.0.1
-    postcss-selector-parser: ^7.1.0
-    postcss-value-parser: ^4.2.0
-    resolve-from: ^5.0.0
-    string-width: ^4.2.3
-    supports-hyperlinks: ^3.2.0
-    svg-tags: ^1.0.0
-    table: ^6.9.0
-    write-file-atomic: ^5.0.1
+    "@csstools/css-parser-algorithms": "npm:^3.0.4"
+    "@csstools/css-tokenizer": "npm:^3.0.3"
+    "@csstools/media-query-list-parser": "npm:^4.0.2"
+    "@csstools/selector-specificity": "npm:^5.0.0"
+    "@dual-bundle/import-meta-resolve": "npm:^4.1.0"
+    balanced-match: "npm:^2.0.0"
+    colord: "npm:^2.9.3"
+    cosmiconfig: "npm:^9.0.0"
+    css-functions-list: "npm:^3.2.3"
+    css-tree: "npm:^3.1.0"
+    debug: "npm:^4.3.7"
+    fast-glob: "npm:^3.3.3"
+    fastest-levenshtein: "npm:^1.0.16"
+    file-entry-cache: "npm:^10.0.7"
+    global-modules: "npm:^2.0.0"
+    globby: "npm:^11.1.0"
+    globjoin: "npm:^0.1.4"
+    html-tags: "npm:^3.3.1"
+    ignore: "npm:^7.0.3"
+    imurmurhash: "npm:^0.1.4"
+    is-plain-object: "npm:^5.0.0"
+    known-css-properties: "npm:^0.35.0"
+    mathml-tag-names: "npm:^2.1.3"
+    meow: "npm:^13.2.0"
+    micromatch: "npm:^4.0.8"
+    normalize-path: "npm:^3.0.0"
+    picocolors: "npm:^1.1.1"
+    postcss: "npm:^8.5.3"
+    postcss-resolve-nested-selector: "npm:^0.1.6"
+    postcss-safe-parser: "npm:^7.0.1"
+    postcss-selector-parser: "npm:^7.1.0"
+    postcss-value-parser: "npm:^4.2.0"
+    resolve-from: "npm:^5.0.0"
+    string-width: "npm:^4.2.3"
+    supports-hyperlinks: "npm:^3.2.0"
+    svg-tags: "npm:^1.0.0"
+    table: "npm:^6.9.0"
+    write-file-atomic: "npm:^5.0.1"
   bin:
     stylelint: bin/stylelint.mjs
   checksum: f00693c3d5b1f75f656d65612bec20198c4a7c5a3900285ef3b752d00258b1e93e7a93eac8434ab9c0d157521b97ed6993ffdde0db53ac5d4c6de5f3e5cf049e
@@ -8753,8 +8753,8 @@ __metadata:
   version: 3.2.0
   resolution: "supports-hyperlinks@npm:3.2.0"
   dependencies:
-    has-flag: ^4.0.0
-    supports-color: ^7.0.0
+    has-flag: "npm:^4.0.0"
+    supports-color: "npm:^7.0.0"
   checksum: 460594ec0024f041f61105d40f1e5fc55ffcc2d94b6048faf25a616ec8fbaea71e74d909a6851c721776f24eed67c59fd3b7c47af22a487ebab85640abdb5d3f
   languageName: node
   linkType: hard
@@ -8803,11 +8803,11 @@ __metadata:
   version: 6.9.0
   resolution: "table@npm:6.9.0"
   dependencies:
-    ajv: ^8.0.1
-    lodash.truncate: ^4.4.2
-    slice-ansi: ^4.0.0
-    string-width: ^4.2.3
-    strip-ansi: ^6.0.1
+    ajv: "npm:^8.0.1"
+    lodash.truncate: "npm:^4.4.2"
+    slice-ansi: "npm:^4.0.0"
+    string-width: "npm:^4.2.3"
+    strip-ansi: "npm:^6.0.1"
   checksum: f54a7d1c11cda8c676e1e9aff5e723646905ed4579cca14b3ce12d2b12eac3e18f5dbe2549fe0b79697164858e18961145db4dd0660bbeb0fb4032af0aaf32b4
   languageName: node
   linkType: hard
@@ -9600,8 +9600,8 @@ __metadata:
   version: 5.0.1
   resolution: "write-file-atomic@npm:5.0.1"
   dependencies:
-    imurmurhash: ^0.1.4
-    signal-exit: ^4.0.1
+    imurmurhash: "npm:^0.1.4"
+    signal-exit: "npm:^4.0.1"
   checksum: 8dbb0e2512c2f72ccc20ccedab9986c7d02d04039ed6e8780c987dc4940b793339c50172a1008eed7747001bfacc0ca47562668a069a7506c46c77d7ba3926a9
   languageName: node
   linkType: hard

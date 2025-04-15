@@ -1,8 +1,6 @@
 # Copyright 2025 The MathWorks, Inc.
 
-from jupyter_matlab_kernel.kernels.labextension_comm.actions import ActionFactory
 from ipykernel.comm import Comm
-
 
 class LabExtensionCommunication:
     def __init__(self, kernel):
@@ -37,15 +35,7 @@ class LabExtensionCommunication:
         self.log.debug(
             f"Received action_type:{action_type} with data:{data} from the lab extension"
         )
-
-        action = ActionFactory.create_action(action_type, self.kernel)
-        self.log.debug(f"Action to execute is {action.__class__.__name__}")
-
-        try:
-            await action.execute(self.comm, content["data"])
-
-        except Exception as err:
-            self.log.error(f"Failed to execute action with exception: {err}")
+   
 
     def comm_close(self, stream, ident, msg):
         """Handler to execute when labextension sends a message with 'comm_close' type."""
@@ -59,7 +49,3 @@ class LabExtensionCommunication:
 
         else:
             self.log.warning(f"Attempted to close unknown comm_id: {comm_id}")
-
-    async def send_message(self, action_type, data):
-        action = ActionFactory.create_action(action_type, self.kernel)
-        await action.execute(self.comm, data)
