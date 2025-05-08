@@ -101,7 +101,7 @@ class MATLABKernelUsingMPM(base.BaseMATLABKernel):
         )
 
     # Helper functions
-    
+
     async def start_matlab_proxy_and_comm_helper(self) -> None:
         """
         Starts the MATLAB proxy using the proxy manager and fetches its status.

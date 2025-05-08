@@ -2,6 +2,7 @@
 
 from ipykernel.comm import Comm
 
+
 class LabExtensionCommunication:
     def __init__(self, kernel):
         self.comm = None
@@ -35,16 +36,14 @@ class LabExtensionCommunication:
         self.log.debug(
             f"Received action_type:{action_type} with data:{data} from the lab extension"
         )
-   
 
     def comm_close(self, stream, ident, msg):
         """Handler to execute when labextension sends a message with 'comm_close' type."""
         content = msg["content"]
         comm_id = content["comm_id"]
 
-        self.log.info(f"Comm closed with id: {comm_id}")
-
         if self.comm and self.comm.comm_id == comm_id:
+            self.log.info(f"Comm closed with id: {comm_id}")
             self.comm = None
 
         else:

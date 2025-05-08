@@ -1,4 +1,4 @@
-// Copyright 2023 The MathWorks, Inc.
+// Copyright 2023-2025 The MathWorks, Inc.
 
 // Registers the button which allows access to MATLAB in a browser, which will
 // appear in the notebook toolbar.

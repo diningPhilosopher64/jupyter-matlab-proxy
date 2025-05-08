@@ -1,3 +1,5 @@
+// Copyright 2025 The MathWorks, Inc.
+
 import path from 'path';
 import { NotebookPanel } from '@jupyterlab/notebook';
 import { PageConfig } from '@jupyterlab/coreutils';

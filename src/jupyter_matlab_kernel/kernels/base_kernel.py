@@ -154,7 +154,6 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
         self.shell_handlers["comm_msg"] = self.labext_comm.comm_msg
         self.shell_handlers["comm_close"] = self.labext_comm.comm_close
 
-
     # ipykernel Interface API
     # https://ipython.readthedocs.io/en/stable/development/wrapperkernels.html
 
@@ -422,7 +421,6 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
         )
 
     # Helper functions
-
 
     async def start_matlab_proxy_and_comm_helper(self):
         """

@@ -266,7 +266,7 @@ class MWICommHelper:
 
     async def send_eval_request_to_matlab(self, mcode):
         return await self._send_eval_request_to_matlab(self._http_shell_client, mcode)
-    
+
     async def _send_eval_request_to_matlab(self, http_client, mcode):
         self.logger.debug("Sending Eval request to MATLAB")
         # Add the MATLAB code shipped with kernel to the Path
@@ -289,7 +289,7 @@ class MWICommHelper:
             self.logger.debug(f"Response:\n{response_data}")
             try:
                 eval_response = response_data["messages"]["EvalResponse"][0]
-            
+
             except KeyError:
                 # In certain cases when the HTTPResponse is received, it does not
                 # contain the expected data. In these cases most likely MATLAB has
@@ -304,7 +304,7 @@ class MWICommHelper:
 
         else:
             self.logger.error("Error during communication with matlab-proxy")
-            raise resp.raise_for_status()           
+            raise resp.raise_for_status()
 
     async def _send_jupyter_request_to_matlab(self, request_type, inputs, http_client):
         execution_request_type = "feval"
