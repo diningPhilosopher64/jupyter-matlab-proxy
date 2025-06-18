@@ -49,7 +49,7 @@ export interface ICommunicationService {
   getComm(notebookID: string): ICommunicationChannel;
 }
 
-class MatlabCommunicationExtension
+export class MatlabCommunicationExtension
 implements
     DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel>,
     ICommunicationService {
@@ -86,15 +86,30 @@ implements
                 );
                 const comm = kernel.createComm(channelName);
 
-                comm.open()
-                    .done.then(() => {
-                        console.debug('Communication channel opened successfully');
-                    })
-                    .catch((error) => {
-                        console.error('Error opening communication channel', error);
-                    });
+                try {
+                    await comm.open().done;
+                    console.debug('Communication channel opened successfully');
+                } catch (error) {
+                    console.error('Error opening communication channel', error);
+                    return new DisposableDelegate(() => {});
+                }
 
-                // Listen for messages from the kernel
+                // comm.open()
+                //     .done.then(() => {
+                //         console.debug('Communication channel opened successfully');
+                //     })
+                //     .catch((error) => {
+                //         console.log("\n\n\n Hello world asdf \n\n\n")
+
+                //         console.error('Error opening communication channel', error);
+
+                //     });
+                
+                
+                
+                
+
+                    // Listen for messages from the kernel
                 comm.onMsg = (msg: KernelMessage.ICommMsgMsg) => {
                     const data = msg.content.data as CommunicationData;
                     console.debug('Recieved data from kernel: ', data);
