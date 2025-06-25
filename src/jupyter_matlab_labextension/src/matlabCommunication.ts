@@ -78,8 +78,7 @@ implements
                 console.log('MATLAB Communication plugin activated for ', panel.id);
 
                 // Create a unique channel name for this notebook
-                const channelName =
-          'matlab_comm_' + Math.random().toString(36).substring(2);
+                const channelName = 'matlab_comm_' + panel.id
                 console.log(
                     'Attempting to create communication with the kernel using channel name',
                     channelName
