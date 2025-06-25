@@ -28,6 +28,9 @@ from jupyter_matlab_kernel.magic_execution_engine import (
 )
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
 
+from jupyter_matlab_kernel.kernels.labextension_comm import LabExtensionCommunication
+
+
 _MATLAB_STARTUP_TIMEOUT = mwi_settings.get_process_startup_timeout()
 
 
@@ -140,6 +143,13 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
 
         # Communication helper for interaction with backend MATLAB proxy
         self.mwi_comm_helper = None
+        
+        self.labext_comm = LabExtensionCommunication(self)
+
+        # Override message types with custom handlers.
+        self.shell_handlers["comm_open"] = self.labext_comm.comm_open
+        self.shell_handlers["comm_msg"] = self.labext_comm.comm_msg
+        self.shell_handlers["comm_close"] = self.labext_comm.comm_close
 
     # ipykernel Interface API
     # https://ipython.readthedocs.io/en/stable/development/wrapperkernels.html

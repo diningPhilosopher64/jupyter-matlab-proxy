@@ -1,4 +1,4 @@
-// Copyright 2023 The MathWorks, Inc.
+// Copyright 2023-2025 The MathWorks, Inc.
 
 // Registers the button which allows access to MATLAB in a browser, which will
 // appear in the notebook toolbar.
@@ -17,14 +17,14 @@ import { IDisposable } from '@lumino/disposable';
 import { matlabIcon } from './icons';
 
 /** Wait until the kernel has loaded, then check if it is a MATLAB kernel. */
-const insertButton = async (panel: NotebookPanel, matlabToolbarButton: ToolbarButton): Promise<void> => {
+export const insertButton = async (panel: NotebookPanel, matlabToolbarButton: ToolbarButton): Promise<void> => {
     await panel.sessionContext.ready;
     if (panel.sessionContext.kernelDisplayName === 'MATLAB Kernel') {
         panel.toolbar.insertItem(10, 'matlabToolbarButton', matlabToolbarButton);
     }
 };
 
-class MatlabToolbarButtonExtension implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
+export class MatlabToolbarButtonExtension implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
     createNew (panel: NotebookPanel, context: DocumentRegistry.IContext<INotebookModel>): IDisposable {
         /**  Create the toolbar button to open MATLAB in a browser. */
         const matlabToolbarButton = new ToolbarButton({

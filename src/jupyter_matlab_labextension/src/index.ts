@@ -4,6 +4,7 @@ import { JupyterFrontEndPlugin } from '@jupyterlab/application';
 import { matlabToolbarButtonPlugin } from './matlab_browser_button';
 import { matlabMFilesPlugin } from './matlab_files';
 import { matlabCodeMirror6Plugin } from './matlab_cm6_mode';
+import { matlabCommPlugin } from './matlabCommunication';
 
-const plugins: JupyterFrontEndPlugin<any>[] = [matlabToolbarButtonPlugin, matlabMFilesPlugin, matlabCodeMirror6Plugin];
+const plugins: JupyterFrontEndPlugin<any>[] = [matlabToolbarButtonPlugin, matlabMFilesPlugin, matlabCodeMirror6Plugin, matlabCommPlugin];
 export default plugins;
