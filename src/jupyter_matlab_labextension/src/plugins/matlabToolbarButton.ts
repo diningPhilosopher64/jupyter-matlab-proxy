@@ -14,7 +14,7 @@ import { INotebookModel, NotebookPanel } from '@jupyterlab/notebook';
 
 import { IDisposable } from '@lumino/disposable';
 
-import { matlabIcon } from './icons';
+import { matlabIcon } from '../icons';
 
 /** Wait until the kernel has loaded, then check if it is a MATLAB kernel. */
 export const insertButton = async (panel: NotebookPanel, matlabToolbarButton: ToolbarButton): Promise<void> => {

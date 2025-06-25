@@ -14,7 +14,7 @@ import {
 import { KernelMessage } from '@jupyterlab/services';
 import { JSONObject, JSONValue, Token } from '@lumino/coreutils';
 import { DisposableDelegate } from '@lumino/disposable';
-import { NotebookInfo } from './utils/notebook';
+import { NotebookInfo } from '../utils/notebook';
 
 // Add more action types as needed
 type CommunicationData = {
