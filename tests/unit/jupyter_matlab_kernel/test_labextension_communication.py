@@ -107,7 +107,7 @@ async def test_comm_msg_with_valid_comm(labext_comm, mocker, mock_stream, mock_i
     
     # Assert
     labext_comm.log.debug.assert_called_once_with(
-        f"Received action_type:test_action with data:{test_data} from the lab extension"
+        f"Received action_type:{test_action} with data:{test_data} from the lab extension"
     )
 
 
