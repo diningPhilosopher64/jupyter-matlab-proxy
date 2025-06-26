@@ -39,8 +39,8 @@ def labext_comm(mock_kernel):
 def test_init(mock_kernel):
     """Test that LabExtensionCommunication initializes correctly."""
     labext_comm = LabExtensionCommunication(mock_kernel)
-    
-    assert labext_comm.comm is None
+
+    assert labext_comm.comms == {}
     assert labext_comm.kernel is mock_kernel
     assert labext_comm.log is mock_kernel.log
 
@@ -53,7 +53,7 @@ def test_comm_open_creates_comm(labext_comm, mocker, mock_stream, mock_ident, mo
         "jupyter_matlab_kernel.kernels.labextension_comm.communication.Comm",
         return_value=mock_comm
     )
-    
+
     test_comm_id = "test-comm-id"
     test_target_name = "test-target"
     msg = {
@@ -62,20 +62,20 @@ def test_comm_open_creates_comm(labext_comm, mocker, mock_stream, mock_ident, mo
             "target_name": test_target_name
         }
     }
-    
+
     # Act
     labext_comm.comm_open(mock_stream, mock_ident, msg)
-    
+
     # Assert
     mock_comm_class.assert_called_once_with(
         comm_id= test_comm_id,
         primary=False,
         target_name=test_target_name
     )
-    
+
     # Verify comm is set
-    assert labext_comm.comm is mock_comm
-    
+    assert labext_comm.comms[test_comm_id] is mock_comm
+
     # Verify logging
     labext_comm.log.debug.assert_called_once_with(
         f"Received comm_open message with id: {test_comm_id} and target_name: {test_target_name}"
@@ -89,22 +89,24 @@ def test_comm_open_creates_comm(labext_comm, mocker, mock_stream, mock_ident, mo
 async def test_comm_msg_with_valid_comm(labext_comm, mocker, mock_stream, mock_ident, mock_comm):
     """Test that comm_msg processes messages when comm is available."""
     # Arrange
-    labext_comm.comm = mock_comm
-    
+    comm_id = 'test-comm-id'
+    labext_comm.comms[comm_id] = mock_comm
+
     test_action = "test-action"
     test_data = {"key": "value"}
     msg = {
         "content": {
+            'comm_id': comm_id,
             "data": {
                 "action": test_action,
                 "data": test_data
             }
         }
     }
-    
+
     # Act
     await labext_comm.comm_msg(mock_stream, mock_ident, msg)
-    
+
     # Assert
     labext_comm.log.debug.assert_called_once_with(
         f"Received action_type:{test_action} with data:{test_data} from the lab extension"
@@ -114,14 +116,16 @@ async def test_comm_msg_with_valid_comm(labext_comm, mocker, mock_stream, mock_i
 @pytest.mark.asyncio
 async def test_comm_msg_without_comm_raises_exception(labext_comm, mocker, mock_stream, mock_ident):
     """Test that comm_msg raises exception when no comm is available."""
-    # Ensure comm is None
-    labext_comm.comm = None
-    
+    # Ensure comms is empty
+    labext_comm.comms = {}
+    comm_id = 'test-comm-id'
+
     # Prepare test data
     test_action = "test-action"
     test_data = {"key": "value"}
     msg = {
         "content": {
+            'comm_id': comm_id,
             "data": {
                 "action": test_action,
                 "data": test_data
@@ -129,41 +133,41 @@ async def test_comm_msg_without_comm_raises_exception(labext_comm, mocker, mock_
         }
     }
 
-    
+
     # Call the method and expect exception
     with pytest.raises(Exception, match="No Communcation channel available"):
         await labext_comm.comm_msg(mock_stream, mock_ident, msg)
-    
+
     # Verify error logging
     labext_comm.log.error.assert_called_once_with(
         "Received comm_msg but no communication channel is available"
     )
 
 
-def test_comm_close_with_matching_comm_id(labext_comm, mocker, mock_stream, mock_ident, mock_comm):
+def test_comm_close_with_valid_comm_id(labext_comm, mocker, mock_stream, mock_ident, mock_comm):
     """Test that comm_close closes the correct communication channel."""
     # Arrange
     # Set up a mock comm with matching ID
-    test_comm_id = "test-comm-id"
-    mock_comm.comm_id = test_comm_id
-    labext_comm.comm = mock_comm
-    
+    comm_id = "test-comm-id"
+    mock_comm.comm_id = comm_id
+    labext_comm.comms = {comm_id : mock_comm}
+
     msg = {
         "content": {
-            "comm_id": test_comm_id
+            "comm_id": comm_id
         }
     }
-    
+
     # Act
     labext_comm.comm_close(mock_stream, mock_ident, msg)
-    
+
     # Assert
     # Verify comm is set to None
-    assert labext_comm.comm is None
-    
+    assert labext_comm.comms == {}
+
     # Verify logging
     labext_comm.log.info.assert_called_once_with(
-        f"Comm closed with id: {test_comm_id}"
+        f"Comm closed with id: {comm_id}"
     )
 
 
@@ -172,47 +176,48 @@ def test_comm_close_with_non_matching_comm_id(labext_comm, mocker, mock_stream, 
     # Arrange
     # Set up a mock comm with different ID
     mock_comm.comm_id = "different-comm-id"
-    test_comm_id = "test-comm-id"
-    labext_comm.comm = mock_comm
-    
+    comm_id = "test-comm-id"
+    different_comm_id = 'different-comm-id'
+    labext_comm.comms = {different_comm_id: mock_comm}
+
     msg = {
         "content": {
-            "comm_id": test_comm_id
+            "comm_id": comm_id
         }
     }
-    
+
     # Act
     labext_comm.comm_close(mock_stream, mock_ident, msg)
-    
+
     # Assert
     # Verify comm is not changed
-    assert labext_comm.comm is mock_comm
-    
+    assert labext_comm.comms[different_comm_id] is mock_comm
+
     # Verify warning logging
     labext_comm.log.warning.assert_called_once_with(
-        f"Attempted to close unknown comm_id: {test_comm_id}"
+        f"Attempted to close unknown comm_id: {comm_id}"
     )
 
 
 def test_comm_close_with_no_comm(labext_comm, mocker, mock_stream, mock_ident):
     """Test that comm_close warns when no comm exists."""
     # Arrange
-    # Ensure comm is None
-    labext_comm.comm = None
+    # Ensure comms is empty
+    labext_comm.comms = {}
     test_comm_id = "test-comm-id"
     msg = {
         "content": {
             "comm_id": test_comm_id
         }
     }
-    
+
     # Act
     labext_comm.comm_close(mock_stream,mock_ident, msg)
-    
+
     # Assert
     # Verify comm remains None
-    assert labext_comm.comm is None
-    
+    assert labext_comm.comms == {}
+
     # Verify warning logging
     labext_comm.log.warning.assert_called_once_with(
         f"Attempted to close unknown comm_id: {test_comm_id}"
@@ -223,22 +228,24 @@ def test_comm_close_with_no_comm(labext_comm, mocker, mock_stream, mock_ident):
 async def test_comm_msg_extracts_data_correctly(labext_comm, mocker, mock_stream, mock_ident, mock_comm):
     """Test that comm_msg correctly extracts action and data from message."""
     # Arrange
-    labext_comm.comm = mock_comm
+    comm_id = 'test-comm-id'
+    labext_comm.comms = {comm_id: mock_comm}
     action_type = "execute_code"
     data = {"code": "x = 1 + 1", "cell_id": "abc123"}
-   
+
     msg = {
         "content": {
+            'comm_id': comm_id,
             "data": {
                 "action": action_type,
                 "data": data
             }
         }
     }
-    
+
     # Call the method
     await labext_comm.comm_msg(mock_stream, mock_ident, msg)
-    
+
     # Verify logging with correct extracted data
     labext_comm.log.debug.assert_called_once_with(
         f"Received action_type:{action_type} with data:{data} from the lab extension"

@@ -27,7 +27,7 @@ class LabExtensionCommunication:
         content = msg["content"]
         data = content["data"]
         action_type = data["action"]
-        data = data["data"]
+        payload = data["data"]
         comm_id = content["comm_id"]
         comm = self.comms.get(comm_id)
 
@@ -38,7 +38,7 @@ class LabExtensionCommunication:
             raise Exception("No Communcation channel available")
 
         self.log.debug(
-            f"Received action_type:{action_type} with data:{data} from the lab extension"
+            f"Received action_type:{action_type} with data:{payload} from the lab extension"
         )
 
     def comm_close(self, stream, ident, msg):
