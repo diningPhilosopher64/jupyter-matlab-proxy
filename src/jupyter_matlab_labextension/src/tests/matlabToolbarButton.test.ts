@@ -8,7 +8,7 @@ jest.mock('../icons', () => ({
     }
   }));
    
-  import { insertButton, MatlabToolbarButtonExtension, matlabToolbarButtonPlugin } from '../plugins/matlabToolbarButtonPlugin';
+  import { insertButton, MatlabToolbarButtonExtension, matlabToolbarButtonPlugin } from '../plugins/matlabToolbarButton';
   import { NotebookPanel } from '@jupyterlab/notebook';
   import { JupyterFrontEnd } from '@jupyterlab/application';
   import { DocumentRegistry } from '@jupyterlab/docregistry';
@@ -199,7 +199,7 @@ jest.mock('../icons', () => ({
       test('should call insertButton with panel and button', () => {
         // Arrange
         // Import the module using ES modules syntax for TypeScript compatibility
-        const matlabButtonModule = require('../plugins/matlabToolbarButtonPlugin');
+        const matlabButtonModule = require('../plugins/matlabToolbarButton');
         const spy = jest.spyOn(matlabButtonModule, 'insertButton')
           .mockImplementation(() => Promise.resolve());
        

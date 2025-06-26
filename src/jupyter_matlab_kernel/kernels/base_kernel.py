@@ -146,7 +146,9 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
         
         self.labext_comm = LabExtensionCommunication(self)
 
-        # Override message types with custom handlers.
+        # Override only comm handlers to keep implementation clean by separating 
+        # JupyterLab extension communication logic from core kernel functionality.
+        # Other handlers (interrupt_request, execute_request, etc.) remain in base class.
         self.shell_handlers["comm_open"] = self.labext_comm.comm_open
         self.shell_handlers["comm_msg"] = self.labext_comm.comm_msg
         self.shell_handlers["comm_close"] = self.labext_comm.comm_close

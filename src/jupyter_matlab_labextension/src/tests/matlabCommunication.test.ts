@@ -18,7 +18,7 @@ jest.mock('@jupyterlab/services', () => ({
     })),
   }));
   
-  import { MatlabCommunicationExtension } from '../plugins/matlabCommunicationPlugin';
+  import { MatlabCommunicationExtension } from '../plugins/matlabCommunication';
   import { NotebookPanel } from '@jupyterlab/notebook';
   import { DocumentRegistry } from '@jupyterlab/docregistry';
   
