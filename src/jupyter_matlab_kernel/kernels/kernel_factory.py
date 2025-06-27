@@ -3,8 +3,8 @@
 import os
 from typing import Union
 
-from jupyter_matlab_kernel.jsp_kernel import MATLABKernelUsingJSP
-from jupyter_matlab_kernel.mpm_kernel import MATLABKernelUsingMPM
+from jupyter_matlab_kernel.kernels.jsp_kernel import MATLABKernelUsingJSP
+from jupyter_matlab_kernel.kernels.mpm_kernel import MATLABKernelUsingMPM
 
 
 class KernelFactory:

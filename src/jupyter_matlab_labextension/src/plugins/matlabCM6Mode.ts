@@ -20,7 +20,7 @@ export function addMATLABCodeMirror (languageRegistry: IEditorLanguageRegistry) 
         extensions: ['m', 'mlx'],
         filename: /^[a-zA-Z][a-zA-Z0-9_]*\.m$/,
         async load () {
-            const m = await import('./codemirror-lang-matlab/codemirror-lang-matlab');
+            const m = await import('../codemirror-lang-matlab/codemirror-lang-matlab');
             return m.matlab();
         }
     });
