@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from jupyter_matlab_kernel.mpm_kernel import MATLABKernelUsingMPM
+from jupyter_matlab_kernel.kernels.mpm_kernel import MATLABKernelUsingMPM
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
 
 
@@ -15,11 +15,12 @@ def mpm_kernel_instance(mocker) -> MATLABKernelUsingMPM:
 
     # Use pytest-mock's mocker fixture to patch the function and log attribute
     mocker.patch(
-        "jupyter_matlab_kernel.base_kernel.BaseMATLABKernel._extract_kernel_id_from_sys_args",
+        "jupyter_matlab_kernel.kernels.base_kernel.BaseMATLABKernel._extract_kernel_id_from_sys_args",
         return_value=uuid.uuid4().hex,
     )
     mocker.patch(
-        "jupyter_matlab_kernel.base_kernel.BaseMATLABKernel.log", new=mock_logger
+        "jupyter_matlab_kernel.kernels.base_kernel.BaseMATLABKernel.log",
+        new=mock_logger,
     )
 
     return MATLABKernelUsingMPM()
@@ -73,7 +74,7 @@ async def test_initialize_mwi_comm_helper(mocker, mpm_kernel_instance):
 
     # Mock MWICommHelper
     mock_mwi_comm_helper = mocker.patch(
-        "jupyter_matlab_kernel.mpm_kernel.MWICommHelper", autospec=True
+        "jupyter_matlab_kernel.kernels.mpm_kernel.MWICommHelper", autospec=True
     )
     mock_mwi_comm_helper_instance = mock_mwi_comm_helper.return_value
     mock_mwi_comm_helper_instance.connect = mocker.AsyncMock()

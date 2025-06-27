@@ -28,6 +28,9 @@ from jupyter_matlab_kernel.magic_execution_engine import (
 )
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
 
+from jupyter_matlab_kernel.kernels.labextension_comm import LabExtensionCommunication
+
+
 _MATLAB_STARTUP_TIMEOUT = mwi_settings.get_process_startup_timeout()
 
 
@@ -75,7 +78,7 @@ def _fetch_jupyter_base_url(parent_pid: str, logger: Logger) -> str:
     return ""
 
 
-def _get_parent_pid() -> int:
+def _get_parent_pid(logger) -> int:
     """
     Retrieves the parent process ID (PID) of the Kernel process.
 
@@ -88,6 +91,8 @@ def _get_parent_pid() -> int:
         str: The PID of the Jupyter server.
     """
     parent_pid = os.getppid()
+
+    logger.info("Type ", type(parent_pid), " parent pid ", parent_pid)
 
     # Note: conda environments do not require this, and for these environments
     # sys.prefix == sys.base_prefix
@@ -140,6 +145,15 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
 
         # Communication helper for interaction with backend MATLAB proxy
         self.mwi_comm_helper = None
+
+        self.labext_comm = LabExtensionCommunication(self)
+
+        # Override only comm handlers to keep implementation clean by separating
+        # JupyterLab extension communication logic from core kernel functionality.
+        # Other handlers (interrupt_request, execute_request, etc.) remain in base class.
+        self.shell_handlers["comm_open"] = self.labext_comm.comm_open
+        self.shell_handlers["comm_msg"] = self.labext_comm.comm_msg
+        self.shell_handlers["comm_close"] = self.labext_comm.comm_close
 
     # ipykernel Interface API
     # https://ipython.readthedocs.io/en/stable/development/wrapperkernels.html

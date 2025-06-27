@@ -13,7 +13,7 @@ import aiohttp
 import aiohttp.client_exceptions
 import requests
 
-from jupyter_matlab_kernel import base_kernel as base
+from jupyter_matlab_kernel.kernels import base_kernel as base
 from jupyter_matlab_kernel import mwi_logger, test_utils
 from jupyter_matlab_kernel.mwi_comm_helpers import MWICommHelper
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
@@ -89,7 +89,7 @@ def start_matlab_proxy(logger=_logger):
         pass
 
     # Use parent process id of the kernel to filter Jupyter Server from the list.
-    jupyter_server_pid = base._get_parent_pid()
+    jupyter_server_pid = base._get_parent_pid(logger)
     logger.debug(f"Resolved jupyter server pid: {jupyter_server_pid}")
 
     nb_server = dict()

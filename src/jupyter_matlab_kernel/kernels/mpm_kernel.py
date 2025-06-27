@@ -9,7 +9,7 @@ from logging import Logger
 import matlab_proxy_manager.lib.api as mpm_lib
 from requests.exceptions import HTTPError
 
-from jupyter_matlab_kernel import base_kernel as base
+from jupyter_matlab_kernel.kernels import base_kernel as base
 from jupyter_matlab_kernel.mwi_comm_helpers import MWICommHelper
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
 

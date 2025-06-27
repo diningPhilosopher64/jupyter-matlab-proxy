@@ -6,7 +6,10 @@ import pytest
 from jupyter_server import serverapp
 from mocks.mock_jupyter_server import MockJupyterServerFixture
 
-from jupyter_matlab_kernel.jsp_kernel import MATLABKernelUsingJSP, start_matlab_proxy
+from jupyter_matlab_kernel.kernels.jsp_kernel import (
+    MATLABKernelUsingJSP,
+    start_matlab_proxy,
+)
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
 
 
