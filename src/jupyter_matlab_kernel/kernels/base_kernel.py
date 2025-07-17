@@ -92,8 +92,6 @@ def _get_parent_pid(logger) -> int:
     """
     parent_pid = os.getppid()
 
-    logger.info("Type ", type(parent_pid), " parent pid ", parent_pid)
-
     # Note: conda environments do not require this, and for these environments
     # sys.prefix == sys.base_prefix
     is_virtual_env = sys.prefix != sys.base_prefix

@@ -1,4 +1,4 @@
-// Copyright 2023 The MathWorks, Inc.
+// Copyright 2025 The MathWorks, Inc.
  
 // Mock the icons module
 jest.mock('../icons', () => ({
