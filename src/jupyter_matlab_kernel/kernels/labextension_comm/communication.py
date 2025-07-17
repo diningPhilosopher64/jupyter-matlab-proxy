@@ -23,23 +23,7 @@ class LabExtensionCommunication:
 
     async def comm_msg(self, stream, ident, msg):
         """Handler to execute when labextension sends a message with 'comm_msg' type."""
-
-        content = msg["content"]
-        data = content["data"]
-        action_type = data["action"]
-        payload = data["data"]
-        comm_id = content["comm_id"]
-        comm = self.comms.get(comm_id)
-
-        if not comm:
-            self.log.error(
-                "Received comm_msg but no communication channel is available"
-            )
-            raise Exception("No Communcation channel available")
-
-        self.log.debug(
-            f"Received action_type:{action_type} with data:{payload} from the lab extension"
-        )
+        pass
 
     def comm_close(self, stream, ident, msg):
         """Handler to execute when labextension sends a message with 'comm_close' type."""

@@ -1,3 +1,5 @@
+// Copyright 2025 The MathWorks, Inc.
+
 // Mock for @jupyterlab/ui-components
 module.exports = {
     LabIcon: class LabIcon {
