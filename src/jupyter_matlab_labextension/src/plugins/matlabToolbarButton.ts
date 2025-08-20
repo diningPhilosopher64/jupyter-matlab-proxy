@@ -17,16 +17,23 @@ import { IDisposable } from '@lumino/disposable';
 import { matlabIcon } from '../icons';
 
 /** Wait until the kernel has loaded, then check if it is a MATLAB kernel. */
-export const insertButton = async (panel: NotebookPanel, matlabToolbarButton: ToolbarButton): Promise<void> => {
+export const insertButton = async (
+    panel: NotebookPanel,
+    matlabToolbarButton: ToolbarButton
+): Promise<void> => {
     await panel.sessionContext.ready;
     if (panel.sessionContext.kernelDisplayName === 'MATLAB Kernel') {
         panel.toolbar.insertItem(10, 'matlabToolbarButton', matlabToolbarButton);
     }
 };
 
-export class MatlabToolbarButtonExtension implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
-    createNew (panel: NotebookPanel, context: DocumentRegistry.IContext<INotebookModel>): IDisposable {
-        /**  Create the toolbar button to open MATLAB in a browser. */
+export class MatlabToolbarButtonExtension
+implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
+    createNew (
+        panel: NotebookPanel,
+        context: DocumentRegistry.IContext<INotebookModel>
+    ): IDisposable {
+    /**  Create the toolbar button to open MATLAB in a browser. */
         const matlabToolbarButton = new ToolbarButton({
             className: 'openMATLABButton',
             icon: matlabIcon,
@@ -46,9 +53,7 @@ export class MatlabToolbarButtonExtension implements DocumentRegistry.IWidgetExt
 export const matlabToolbarButtonPlugin: JupyterFrontEndPlugin<void> = {
     id: '@mathworks/matlabToolbarButtonPlugin',
     autoStart: true,
-    activate: (
-        app: JupyterFrontEnd
-    ) => {
+    activate: (app: JupyterFrontEnd) => {
         const matlabToolbarButton = new MatlabToolbarButtonExtension();
         app.docRegistry.addWidgetExtension('Notebook', matlabToolbarButton);
     }

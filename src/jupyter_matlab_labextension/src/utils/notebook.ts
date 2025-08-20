@@ -4,20 +4,43 @@ import path from 'path';
 import { NotebookPanel } from '@jupyterlab/notebook';
 import { PageConfig } from '@jupyterlab/coreutils';
 
+/**
+ * Tracks metadata and kernel state for the currently active Jupyter notebook panel.
+ * Provides helpers to determine whether the notebook is a MATLAB notebook, whether
+ * its kernel is busy, resolve the notebook's file path, and control the kernel.
+ */
 export class NotebookInfo {
     private _notebookName: string | undefined = undefined;
     private _isMatlabNotebook: boolean = false;
     private _isBusy: boolean = false;
     private _panel: NotebookPanel | null = null;
 
+    /*
+     * Whether the current notebook’s kernelspec indicates MATLAB.
+     *
+     * @returns True if the current notebook is a MATLAB notebook; otherwise false.
+    */
     isMatlabNotebook (): boolean {
         return this._isMatlabNotebook;
     }
 
+    /*
+     * Whether the kernel is busy, but only for MATLAB notebooks.
+     * If the current notebook is not MATLAB, returns false.
+     *
+     * @returns True if the notebook is MATLAB and the kernel is busy; otherwise false.
+    */
     isBusy (): boolean {
         return this._isMatlabNotebook ? this._isBusy : false;
     }
 
+    /*
+     * Absolute path to the current notebook on the filesystem.
+     *
+     * Combines the Jupyter server root with the notebook's relative path.
+     *
+     * @returns The absolute file path if available; otherwise undefined.
+    */
     getCurrentFilePath (): string | undefined {
         if (this._notebookName) {
             return path.join(PageConfig.getOption('serverRoot'), this._notebookName);
@@ -26,6 +49,12 @@ export class NotebookInfo {
         }
     }
 
+    /*
+     * Waits until the associated kernel reaches the 'idle' status.
+     *
+     * @throws Error if no notebook panel has been set via update().
+     * @returns A promise that resolves when the kernel status becomes 'idle'.
+    */
     async waitForIdleStatus (): Promise<void> {
         if (!this._panel) {
             throw Error('No notebook panel provided');
@@ -49,6 +78,19 @@ export class NotebookInfo {
         }
     }
 
+    /*
+     * Updates the tracked notebook panel and refreshes its derived state:
+     * - whether it is a MATLAB notebook (via kernelspec metadata),
+     * - whether the kernel is currently busy,
+     * - the notebook’s path.
+     *
+     * If panel is null, clears all tracked state.
+     *
+     * Note: Waits for the session context to be ready before reading kernel status.
+     *
+     * @param panel The active NotebookPanel to track, or null to reset.
+     * @returns A promise that resolves when the state has been updated.
+    */
     async update (panel: NotebookPanel | null): Promise<void> {
         if (panel) {
             this._panel = panel;
@@ -70,6 +112,10 @@ export class NotebookInfo {
         }
     }
 
+    /*
+     * Sends an interrupt to the associated kernel, if available.
+     * No-op if there is no tracked panel/session/kernel.
+    */
     interrupt (): void {
         if (this._panel) {
             this._panel.sessionContext.session?.kernel?.interrupt();
@@ -77,6 +123,11 @@ export class NotebookInfo {
         }
     }
 
+    /*
+     * Returns the current notebook’s path relative to the server root.
+     *
+     * @returns The relative path (e.g., 'folder/notebook.ipynb') or undefined if none is set.
+    */
     getCurrentFilename (): string | undefined {
         return this._notebookName;
     }
