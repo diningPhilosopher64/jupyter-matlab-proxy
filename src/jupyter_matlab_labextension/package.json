@@ -85,7 +85,6 @@
     "prettier": "^2.8.7",
     "rimraf": "^4.4.1",
     "semver": ">=5.7.2",
-    "stylelint": "^16.18.0",
     "ts-jest": "^29.2.5",
     "typescript": "~5.0.2",
     "ws": "^7.5.10",

@@ -2,9 +2,9 @@
 
 import pytest
 
-from jupyter_matlab_kernel.kernels.jsp_kernel import MATLABKernelUsingJSP
-from jupyter_matlab_kernel.kernels.kernel_factory import KernelFactory
-from jupyter_matlab_kernel.kernels.mpm_kernel import MATLABKernelUsingMPM
+from jupyter_matlab_kernel.kernels import MATLABKernelUsingJSP
+from jupyter_matlab_kernel.kernels import KernelFactory
+from jupyter_matlab_kernel.kernels import MATLABKernelUsingMPM
 
 
 @pytest.mark.parametrize(

@@ -13,7 +13,6 @@ import sys
 import time
 from logging import Logger
 from pathlib import Path
-from typing import Optional
 
 import aiohttp
 import aiohttp.client_exceptions
@@ -78,7 +77,7 @@ def _fetch_jupyter_base_url(parent_pid: str, logger: Logger) -> str:
     return ""
 
 
-def _get_parent_pid(logger) -> int:
+def _get_parent_pid() -> int:
     """
     Retrieves the parent process ID (PID) of the Kernel process.
 

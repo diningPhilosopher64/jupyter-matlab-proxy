@@ -11,6 +11,10 @@ class LabExtensionCommunication:
 
     def comm_open(self, stream, ident, msg):
         """Handler to execute when labextension sends a message with 'comm_open' type ."""
+
+        # As per jupyter messaging protocol https://jupyter-client.readthedocs.io/en/latest/messaging.html#custom-messages
+        # 'content' will be present in msg, 'comm_id' and 'target_name' will be present in content.
+
         content = msg["content"]
         comm_id = content["comm_id"]
         target_name = content["target_name"]
@@ -27,6 +31,9 @@ class LabExtensionCommunication:
 
     def comm_close(self, stream, ident, msg):
         """Handler to execute when labextension sends a message with 'comm_close' type."""
+
+        # As per jupyter messaging protocol https://jupyter-client.readthedocs.io/en/latest/messaging.html#custom-messages
+        # 'content' will be present in msg, 'comm_id' and 'data' will be present in content.
         content = msg["content"]
         comm_id = content["comm_id"]
         comm = self.comms.get(comm_id)
@@ -36,4 +43,4 @@ class LabExtensionCommunication:
             del self.comms[comm_id]
 
         else:
-            self.log.warning(f"Attempted to close unknown comm_id: {comm_id}")
+            self.log.debug(f"Attempted to close unknown comm_id: {comm_id}")

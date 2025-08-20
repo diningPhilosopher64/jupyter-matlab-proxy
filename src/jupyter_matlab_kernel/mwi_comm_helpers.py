@@ -385,6 +385,9 @@ class MWICommHelper:
             resp = await self._send_feval_request_to_matlab(
                 http_client, "processJupyterKernelRequest", 1, *inputs
             )
+
+        # The 'else' condition is an artifact and is present here incase we ever want to test
+        # eval execution. 
         else:
             user_mcode = inputs[2]
             # Construct a string which can be evaluated in MATLAB. For example

@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from jupyter_matlab_kernel.kernels.mpm_kernel import MATLABKernelUsingMPM
+from jupyter_matlab_kernel.kernels import MATLABKernelUsingMPM
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
 
 
