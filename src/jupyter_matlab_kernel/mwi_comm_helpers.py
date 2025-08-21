@@ -381,6 +381,7 @@ class MWICommHelper:
             f"Using {execution_request_type} request type for communication with EC"
         )
 
+        resp = None
         if execution_request_type == "feval":
             resp = await self._send_feval_request_to_matlab(
                 http_client, "processJupyterKernelRequest", 1, *inputs

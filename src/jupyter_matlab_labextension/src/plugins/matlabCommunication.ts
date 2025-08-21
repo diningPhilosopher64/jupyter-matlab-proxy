@@ -11,7 +11,7 @@ import {
     INotebookTracker,
     NotebookPanel
 } from '@jupyterlab/notebook';
-import { KernelMessage } from '@jupyterlab/services';
+import { KernelMessage, Kernel } from '@jupyterlab/services';
 import { JSONObject, JSONValue, Token } from '@lumino/coreutils';
 import { DisposableDelegate } from '@lumino/disposable';
 import { NotebookInfo } from '../utils/notebook';
@@ -49,6 +49,43 @@ implements
     DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel>,
     ICommunicationService {
     private _comms = new Map<string, ICommunicationChannel>();
+
+    /*
+     * Attempts to open a comm channel with a retry mechanism.
+     * @param kernel The kernel for which a comm channel is being created.
+
+     * @returns A promise that resolves when the comm is open.
+    */
+    private async _createAndOpenCommWithRetry (kernel: Kernel.IKernelConnection, channelName: string): Promise<Kernel.IComm | null> {
+        let attempt = 1;
+        let delayInMS = 200;
+        const maxRetries = 5;
+
+        while (attempt <= maxRetries) {
+            try {
+                // Creates comm object on the client side
+                const comm = kernel.createComm(channelName);
+
+                // Attempts to open a channel with the kernel
+                await comm.open().done;
+                console.log('Communication channel opened successfully with ID:', comm.commId);
+                return comm;
+            } catch (error) {
+                console.error('Error opening communication channel', error);
+                console.error(`Attempt #${attempt} failed. Waiting ${delayInMS}ms before next attempt.`);
+            }
+            // Wait for the delay
+            await new Promise(resolve => setTimeout(resolve, delayInMS));
+
+            // Update
+            delayInMS *= 2;
+            attempt += 1;
+        }
+
+        console.error(`Failed to create communication channel after ${attempt} attempts.`);
+        return null;
+    }
+
     createNew (
         panel: NotebookPanel,
         context: DocumentRegistry.IContext<INotebookModel>
@@ -75,18 +112,14 @@ implements
                 // Create a unique channel name for this notebook
                 const channelName = 'matlab_comm_' + panel.id;
                 console.log(
-                    'Attempting to create communication with the kernel using channel name',
-                    channelName
+                    'Attempting to establish communication with the kernel'
                 );
-                const comm = kernel.createComm(channelName);
 
-                try {
-                    await comm.open().done;
-                    console.debug('Communication channel opened successfully');
-                } catch (error) {
-                    console.error('Error opening communication channel', error);
+                const comm = await this._createAndOpenCommWithRetry(kernel, channelName);
+                if (!comm) {
                     return new DisposableDelegate(() => {});
                 }
+
                 // Listen for messages from the kernel
                 comm.onMsg = (msg: KernelMessage.ICommMsgMsg) => {
                     const data = msg.content.data as CommunicationData;
@@ -99,12 +132,6 @@ implements
                 };
 
                 this._comms.set(panel.id, comm);
-                console.log(
-                    'Communication channel created with ID: ',
-                    comm.commId,
-                    ' and target name ',
-                    comm.targetName
-                );
 
                 // Clean up when notebook is disposed
                 panel.disposed.connect(() => {
