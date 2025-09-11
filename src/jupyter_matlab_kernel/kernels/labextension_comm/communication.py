@@ -1,6 +1,7 @@
 # Copyright 2025 The MathWorks, Inc.
 
 from ipykernel.comm import Comm
+import time
 
 
 class LabExtensionCommunication:
@@ -27,7 +28,14 @@ class LabExtensionCommunication:
 
     async def comm_msg(self, stream, ident, msg):
         """Handler to execute when labextension sends a message with 'comm_msg' type."""
-        pass
+        # As per jupyter messaging protocol https://jupyter-client.readthedocs.io/en/latest/messaging.html#custom-messages
+        # 'content' will be present in msg, 'comm_id' and 'data' will be present in content.
+        payload = msg["content"]["data"]
+        action_type, action_data = payload["action"], payload["data"]
+
+        self.log.debug(
+            f"Received action_type:{action_type} with data:{action_data} from the lab extension"
+        )
 
     def comm_close(self, stream, ident, msg):
         """Handler to execute when labextension sends a message with 'comm_close' type."""
