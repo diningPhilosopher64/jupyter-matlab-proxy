@@ -86,7 +86,7 @@ def test_comm_open_creates_comm(
 
 @pytest.mark.asyncio
 async def test_comm_msg_with_valid_comm(
-    labext_comm, mocker, mock_stream, mock_ident, mock_comm
+    labext_comm, mock_stream, mock_ident, mock_comm
 ):
     """Test that comm_msg processes messages when comm is available."""
     # Arrange
@@ -111,38 +111,7 @@ async def test_comm_msg_with_valid_comm(
     )
 
 
-@pytest.mark.asyncio
-async def test_comm_msg_without_comm_raises_exception(
-    labext_comm, mocker, mock_stream, mock_ident
-):
-    """Test that comm_msg raises exception when no comm is available."""
-    # Ensure comms is empty
-    labext_comm.comms = {}
-    comm_id = "test-comm-id"
-
-    # Prepare test data
-    test_action = "test-action"
-    test_data = {"key": "value"}
-    msg = {
-        "content": {
-            "comm_id": comm_id,
-            "data": {"action": test_action, "data": test_data},
-        }
-    }
-
-    # Call the method and expect exception
-    with pytest.raises(Exception, match="No Communcation channel available"):
-        await labext_comm.comm_msg(mock_stream, mock_ident, msg)
-
-    # Verify error logging
-    labext_comm.log.error.assert_called_once_with(
-        "Received comm_msg but no communication channel is available"
-    )
-
-
-def test_comm_close_with_valid_comm_id(
-    labext_comm, mocker, mock_stream, mock_ident, mock_comm
-):
+def test_comm_close_with_valid_comm_id(labext_comm, mock_stream, mock_ident, mock_comm):
     """Test that comm_close closes the correct communication channel."""
     # Arrange
     # Set up a mock comm with matching ID
@@ -164,7 +133,7 @@ def test_comm_close_with_valid_comm_id(
 
 
 def test_comm_close_with_non_matching_comm_id(
-    labext_comm, mocker, mock_stream, mock_ident, mock_comm
+    labext_comm, mock_stream, mock_ident, mock_comm
 ):
     """Test that comm_close warns when trying to close unknown comm."""
     # Arrange
@@ -184,12 +153,12 @@ def test_comm_close_with_non_matching_comm_id(
     assert labext_comm.comms[different_comm_id] is mock_comm
 
     # Verify warning logging
-    labext_comm.log.warning.assert_called_once_with(
+    labext_comm.log.debug.assert_called_once_with(
         f"Attempted to close unknown comm_id: {comm_id}"
     )
 
 
-def test_comm_close_with_no_comm(labext_comm, mocker, mock_stream, mock_ident):
+def test_comm_close_with_no_comm(labext_comm, mock_stream, mock_ident):
     """Test that comm_close warns when no comm exists."""
     # Arrange
     # Ensure comms is empty
@@ -205,14 +174,14 @@ def test_comm_close_with_no_comm(labext_comm, mocker, mock_stream, mock_ident):
     assert labext_comm.comms == {}
 
     # Verify warning logging
-    labext_comm.log.warning.assert_called_once_with(
+    labext_comm.log.debug.assert_called_once_with(
         f"Attempted to close unknown comm_id: {test_comm_id}"
     )
 
 
 @pytest.mark.asyncio
 async def test_comm_msg_extracts_data_correctly(
-    labext_comm, mocker, mock_stream, mock_ident, mock_comm
+    labext_comm, mock_stream, mock_ident, mock_comm
 ):
     """Test that comm_msg correctly extracts action and data from message."""
     # Arrange

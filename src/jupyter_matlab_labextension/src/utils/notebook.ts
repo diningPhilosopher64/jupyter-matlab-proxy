@@ -93,15 +93,13 @@ export class NotebookInfo {
     */
     async update (panel: NotebookPanel | null): Promise<void> {
         if (panel) {
-            this._panel = panel;
-            this._isMatlabNotebook =
-        panel.context.model.metadata.kernelspec?.language === 'matlab';
-            const context = panel.context;
             // Wait for session context to be ready
             if (!panel.sessionContext.isReady) {
                 await panel.sessionContext.ready;
             }
-
+            this._panel = panel;
+            this._isMatlabNotebook = panel.sessionContext.kernelDisplayName === 'MATLAB Kernel';
+            const context = panel.context;
             this._isBusy = panel.sessionContext.session?.kernel?.status === 'busy';
             this._notebookName = context.path;
         } else {

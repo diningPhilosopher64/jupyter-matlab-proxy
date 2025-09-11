@@ -89,7 +89,7 @@ def start_matlab_proxy(logger=_logger):
         pass
 
     # Use parent process id of the kernel to filter Jupyter Server from the list.
-    jupyter_server_pid = base._get_parent_pid(logger)
+    jupyter_server_pid = base._get_parent_pid()
     logger.debug(f"Resolved jupyter server pid: {jupyter_server_pid}")
 
     nb_server = dict()

@@ -128,23 +128,22 @@ implements
 
                 // Handle comm close
                 comm.onClose = (msg) => {
-                    console.debug('Comm closed:', msg);
+                    console.debug(`Received data:${msg} for comm close event.`);
+                    console.log(`Comm with ID:${comm.commId} closed.`);
                 };
 
                 this._comms.set(panel.id, comm);
-
-                // Clean up when notebook is disposed
-                panel.disposed.connect(() => {
-                    this._comms.delete(panel.id);
-                });
             })
             .catch((error) => {
                 console.error('Notebook panel was not ready', error);
             });
 
         return new DisposableDelegate(() => {
-            this._comms.get(panel.id)?.close();
-            this._comms.delete(panel.id);
+            const comm = this._comms.get(panel.id);
+            if (comm && !comm.isDisposed) {
+                comm.close();
+                this._comms.delete(panel.id);
+            }
         });
     }
 
