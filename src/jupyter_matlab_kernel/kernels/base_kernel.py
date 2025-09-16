@@ -27,7 +27,7 @@ from jupyter_matlab_kernel.magic_execution_engine import (
 )
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
 
-from jupyter_matlab_kernel.kernels.labextension_comm import LabExtensionCommunication
+from jupyter_matlab_kernel.kernels.comms import LabExtensionCommunication
 
 
 _MATLAB_STARTUP_TIMEOUT = mwi_settings.get_process_startup_timeout()
@@ -144,6 +144,9 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
         self.mwi_comm_helper = None
 
         self.labext_comm = LabExtensionCommunication(self)
+
+        # Custom handling of comm messages for jupyterlab extension communication.
+        # https://jupyter-client.readthedocs.io/en/latest/messaging.html#custom-messages
 
         # Override only comm handlers to keep implementation clean by separating
         # JupyterLab extension communication logic from core kernel functionality.

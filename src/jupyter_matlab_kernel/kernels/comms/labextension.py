@@ -1,7 +1,6 @@
 # Copyright 2025 The MathWorks, Inc.
 
 from ipykernel.comm import Comm
-import time
 
 
 class LabExtensionCommunication:

@@ -33,7 +33,7 @@ implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
         panel: NotebookPanel,
         context: DocumentRegistry.IContext<INotebookModel>
     ): IDisposable {
-    /**  Create the toolbar button to open MATLAB in a browser. */
+        /**  Create the toolbar button to open MATLAB in a browser. */
         const matlabToolbarButton = new ToolbarButton({
             className: 'openMATLABButton',
             icon: matlabIcon,

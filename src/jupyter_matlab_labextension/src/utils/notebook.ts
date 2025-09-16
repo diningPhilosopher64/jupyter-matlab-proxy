@@ -70,9 +70,9 @@ export class NotebookInfo {
                             resolve();
                         }
                     };
-          this._panel!.sessionContext.session?.kernel?.statusChanged.connect(
-              onStatusChanged
-          );
+                    this._panel!.sessionContext.session?.kernel?.statusChanged.connect(
+                        onStatusChanged
+                    );
                 }
             });
         }
