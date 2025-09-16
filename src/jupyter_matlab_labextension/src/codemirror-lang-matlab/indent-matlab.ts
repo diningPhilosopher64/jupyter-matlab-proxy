@@ -25,10 +25,10 @@ export function lineIndent (
         currentLineText.match(/^(?:\s*)(case)\b$/) &&
     previousLineText.match(/^(?:\s*)(switch)\b/)
     ) {
-    // First case in a switch statement.
+        // First case in a switch statement.
         return prevLineIndent + indentUnit;
     } else if (currentLineText.match(/^(?:\s*)(end)\b$/)) {
-    // Treat "end" separately to avoid mistakenly correcting the end of a switch statement.
+        // Treat "end" separately to avoid mistakenly correcting the end of a switch statement.
         const currentLeadingWhitespace = currentLineText.match(
             leadingWhitespacePattern
         );
@@ -44,7 +44,7 @@ export function lineIndent (
             return 0;
         }
     } else {
-    // Other cases
+        // Other cases
         let lineIndent = prevLineIndent;
         const indentMatch = previousLineText.match(indentPattern);
         if (indentMatch !== null) {

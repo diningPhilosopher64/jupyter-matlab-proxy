@@ -1,7 +1,7 @@
 # Copyright 2025 The MathWorks, Inc.
 
 import pytest
-from jupyter_matlab_kernel.kernels.labextension_comm.communication import (
+from jupyter_matlab_kernel.kernels.comms.labextension import (
     LabExtensionCommunication,
 )
 
@@ -56,7 +56,7 @@ def test_comm_open_creates_comm(
     # Arrange
     # Mock the Comm class
     mock_comm_class = mocker.patch(
-        "jupyter_matlab_kernel.kernels.labextension_comm.communication.Comm",
+        "jupyter_matlab_kernel.kernels.comms.labextension.Comm",
         return_value=mock_comm,
     )
 

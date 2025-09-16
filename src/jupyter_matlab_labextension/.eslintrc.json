@@ -36,6 +36,7 @@
     "import/no-webpack-loader-syntax": "warn",
     "node/no-callback-literal": ["off", "warn"],
     "node/handle-callback-err": ["off", "warn"],
-    "node/no-deprecated-api": ["off", "warn"]
+    "node/no-deprecated-api": ["off", "warn"],
+    "no-multiple-empty-lines": "warn"
   }
 }

@@ -163,22 +163,20 @@ implements
 }
 
 // A unique token for the comm service
-export const CommunicationService = new Token<MatlabCommunicationExtension>(
-    '@mathworks/MatlabCommPlugin'
-);
+export const IMatlabCommunication = new Token<ICommunicationService>('@mathworks/matlab-comm:IMatlabCommunication');
 
 export const matlabCommPlugin: JupyterFrontEndPlugin<MatlabCommunicationExtension> =
   {
       id: '@mathworks/matlabCommPlugin',
       autoStart: true,
       requires: [INotebookTracker],
-      provides: CommunicationService,
+      provides: IMatlabCommunication,
       activate: (app: JupyterFrontEnd): MatlabCommunicationExtension => {
           const matlabCommExtension = new MatlabCommunicationExtension();
           app.docRegistry.addWidgetExtension('Notebook', matlabCommExtension);
 
           // Dispose resources created by this plugin when the page unloads.
-          // Need to add this seperately if the jupyterlab tab is closed directly.
+          // Need to handle this separately for the case when jupyterlab tab is closed directly
           window.addEventListener('beforeunload', () => {
               matlabCommExtension.deleteComms();
           });

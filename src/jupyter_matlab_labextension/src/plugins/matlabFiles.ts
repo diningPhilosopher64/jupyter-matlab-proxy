@@ -27,8 +27,8 @@ function registerMFiles (
 ) {
     const { commands } = app;
     const createNewMatlabFile = async (args: ReadonlyPartialJSONObject) => {
-    /** Get the directory in which the MATLAB file must be created;
-     * otherwise take the current filebrowser directory. */
+        /** Get the directory in which the MATLAB file must be created;
+         * otherwise take the current filebrowser directory. */
         const cwd = args.cwd;
 
         /** Create a new untitled MATLAB file. */
