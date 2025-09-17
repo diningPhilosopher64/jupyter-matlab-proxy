@@ -23,7 +23,9 @@ class LabExtensionCommunication:
         )
         comm = Comm(comm_id=comm_id, primary=False, target_name=target_name)
         self.comms[comm_id] = comm
-        self.log.info("Successfully created communication channel with labextension")
+        self.log.debug(
+            f"Successfully created communication channel with labextension on: {comm_id}"
+        )
 
     async def comm_msg(self, stream, ident, msg):
         """Handler to execute when labextension sends a message with 'comm_msg' type."""

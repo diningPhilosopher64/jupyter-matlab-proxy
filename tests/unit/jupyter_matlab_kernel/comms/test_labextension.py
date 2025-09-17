@@ -5,6 +5,8 @@ from jupyter_matlab_kernel.kernels.comms.labextension import (
     LabExtensionCommunication,
 )
 
+from unittest.mock import call
+
 
 @pytest.fixture
 def mock_kernel(mocker):
@@ -74,14 +76,17 @@ def test_comm_open_creates_comm(
 
     # Verify comm is set
     assert labext_comm.comms[test_comm_id] is mock_comm
-
-    # Verify logging
-    labext_comm.log.debug.assert_called_once_with(
-        f"Received comm_open message with id: {test_comm_id} and target_name: {test_target_name}"
-    )
-    labext_comm.log.info.assert_called_once_with(
-        "Successfully created communication channel with labextension"
-    )
+    # Verify debug is called twice and with the right messages
+    assert labext_comm.log.debug.call_count == 2
+    expected_calls = [
+        call(
+            f"Received comm_open message with id: {test_comm_id} and target_name: {test_target_name}"
+        ),
+        call(
+            f"Successfully created communication channel with labextension on: {test_comm_id}"
+        ),
+    ]
+    labext_comm.log.debug.assert_has_calls(expected_calls, any_order=True)
 
 
 @pytest.mark.asyncio
