@@ -58,7 +58,7 @@ def test_comm_open_creates_comm(
     # Arrange
     # Mock the Comm class
     mock_comm_class = mocker.patch(
-        "jupyter_matlab_kernel.kernels.comms.labextension.Comm",
+        "jupyter_matlab_kernel.kernels.comms.labextension.labextension.Comm",
         return_value=mock_comm,
     )
 
