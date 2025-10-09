@@ -5,7 +5,7 @@ if __name__ == "__main__":
     from ipykernel.kernelapp import IPKernelApp
 
     from jupyter_matlab_kernel import mwi_logger
-    from jupyter_matlab_kernel.kernels.kernel_factory import KernelFactory
+    from jupyter_matlab_kernel.kernel_factory import KernelFactory
 
     logger = mwi_logger.get(init=True)
 

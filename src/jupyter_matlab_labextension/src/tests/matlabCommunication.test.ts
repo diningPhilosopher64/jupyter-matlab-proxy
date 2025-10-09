@@ -53,9 +53,9 @@ describe('MatlabCommunicationExtension', () => {
                                 done: {
                                     then: jest.fn().mockImplementation((cb) => cb()),
                                     catch: jest.fn().mockImplementation((cb) => cb())
-                                    // catch: jest.fn(),
                                 }
-                            })
+                            }),
+                            close: jest.fn()
                         }))
                     }
                 }
@@ -107,25 +107,20 @@ describe('MatlabCommunicationExtension', () => {
         const disposable = extension.createNew(panel, context);
 
         await panel.sessionContext.ready;
-
-        // Wait for the async operations in createNew to complete
         await new Promise((resolve) => setTimeout(resolve, 10));
 
-        // Verify that a comm was created and stored
-        // (We need to check this before disposal since getComm throws if not found)
+        // Verify a comm was created
         const { kernel } = panel.sessionContext.session!;
         expect(kernel?.createComm).toHaveBeenCalled();
 
-        // Simulate panel disposal by calling the disposal callback that was connected
-        // The panel.disposed.connect mock should have been called with a callback
-        expect(panel.disposed.connect).toHaveBeenCalled();
-        const disposalCallback = (panel.disposed.connect as jest.Mock).mock
-            .calls[0][0];
-        disposalCallback(); // Trigger the disposal
+        // Comm should exist before disposal
+        expect(() => extension.getComm(panel.id)).not.toThrow();
 
-        // After disposal, the comm should be cleaned up
+        // Simulate disposal via DisposableDelegate
+        disposable.dispose();
+
+        // Comm should now be cleaned up
         expect(() => extension.getComm(panel.id)).toThrow();
-        expect(disposable.dispose).toBeDefined();
     });
 
     it('should throw an error if getComm is called with an invalid notebook ID', async () => {
