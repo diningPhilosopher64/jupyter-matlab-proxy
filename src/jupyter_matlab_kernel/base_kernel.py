@@ -27,7 +27,7 @@ from jupyter_matlab_kernel.magic_execution_engine import (
 )
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
 
-from jupyter_matlab_kernel.kernels.comms import LabExtensionCommunication
+from jupyter_matlab_kernel.comms import LabExtensionCommunication
 
 
 _MATLAB_STARTUP_TIMEOUT = mwi_settings.get_process_startup_timeout()

@@ -236,14 +236,18 @@ async def test_execution_success(monkeypatch, matlab_proxy_fixture):
 async def test_send_eval_request_to_matlab_success(monkeypatch, matlab_proxy_fixture):
     """Test that send_eval_request_to_matlab returns eval response correctly."""
 
+    # Arrange
     async def mock_post(*args, **kwargs):
         return MockEvalResponse(is_error=False, response_str="", message_faults=[])
 
     monkeypatch.setattr(aiohttp.ClientSession, "post", mock_post)
 
     mcode = "x = 1 + 1"
+
+    # Act
     result = await matlab_proxy_fixture.send_eval_request_to_matlab(mcode)
 
+    # Assert
     # Verify the eval response is returned as-is
     expected_response = {"isError": False, "responseStr": "", "messageFaults": []}
     assert result == expected_response
@@ -254,6 +258,7 @@ async def test_send_eval_request_to_matlab_with_error(
 ):
     """Test that send_eval_request_to_matlab returns error response correctly."""
 
+    # Arrange
     async def mock_post(*args, **kwargs):
         return MockEvalResponse(
             is_error=True,
@@ -264,8 +269,11 @@ async def test_send_eval_request_to_matlab_with_error(
     monkeypatch.setattr(aiohttp.ClientSession, "post", mock_post)
 
     mcode = "invalid_syntax"
+
+    # Act
     result = await matlab_proxy_fixture.send_eval_request_to_matlab(mcode)
 
+    # Assert
     # Verify the error response is returned as-is
     expected_response = {
         "isError": True,
@@ -279,7 +287,7 @@ async def test_send_eval_request_to_matlab_bad_request(
     monkeypatch, matlab_proxy_fixture
 ):
     """Test that send_eval_request_to_matlab raises exception for bad HTTP request."""
-
+    # Arrange
     mock_exception_message = "Mock exception thrown due to bad request status."
 
     async def mock_post(*args, **kwargs):
@@ -288,8 +296,12 @@ async def test_send_eval_request_to_matlab_bad_request(
     monkeypatch.setattr(aiohttp.ClientSession, "post", mock_post)
 
     mcode = "x = 1 + 1"
+
+    # Act
     with pytest.raises(aiohttp.client_exceptions.ClientError) as exceptionInfo:
         await matlab_proxy_fixture.send_eval_request_to_matlab(mcode)
+
+    # Assert
     assert mock_exception_message in str(exceptionInfo.value)
 
 
@@ -298,6 +310,7 @@ async def test_send_eval_request_to_matlab_missing_eval_response(
 ):
     """Test that send_eval_request_to_matlab raises MATLABConnectionError for missing EvalResponse."""
 
+    # Arrange
     async def mock_post(*args, **kwargs):
         return MockEvalResponseMissingData()
 
@@ -311,7 +324,7 @@ async def test_send_eval_request_to_matlab_missing_eval_response(
 # Testing _read_eval_response_from_file
 async def test_read_eval_response_from_file_success_with_file(matlab_proxy_fixture):
     """Test _read_eval_response_from_file with successful response and file."""
-
+    # Arrange
     # Create a temporary file with test data
     test_data = [
         {"type": "stream", "content": {"name": "stdout", "text": "Hello World"}}
@@ -327,8 +340,10 @@ async def test_read_eval_response_from_file_success_with_file(matlab_proxy_fixtu
             "messageFaults": [],
         }
 
+        # Act
         result = await matlab_proxy_fixture._read_eval_response_from_file(eval_response)
 
+        # Assert
         # Verify the result
         assert result == test_data
 
@@ -343,15 +358,17 @@ async def test_read_eval_response_from_file_success_with_file(matlab_proxy_fixtu
 
 async def test_read_eval_response_from_file_success_without_file(matlab_proxy_fixture):
     """Test _read_eval_response_from_file with successful response but no file."""
-
+    # Arrange
     eval_response = {
         "isError": False,
         "responseStr": "",  # Empty file path
         "messageFaults": [],
     }
 
+    # Act
     result = await matlab_proxy_fixture._read_eval_response_from_file(eval_response)
 
+    # Assert
     # Verify empty result returns empty list
     assert result == []
 
@@ -360,13 +377,14 @@ async def test_read_eval_response_from_file_error_with_message_faults(
     matlab_proxy_fixture,
 ):
     """Test _read_eval_response_from_file with error response containing message faults."""
-
+    # Arrange
     eval_response = {
         "isError": True,
         "responseStr": "Error occurred",
         "messageFaults": [{"message": "Syntax error in code"}],
     }
 
+    # Act
     with pytest.raises(
         Exception,
         match="Failed to execute. Operation may have been interrupted by user.",
