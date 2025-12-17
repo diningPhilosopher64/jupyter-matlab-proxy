@@ -145,7 +145,6 @@ class MATLABKernelUsingMPM(base.BaseMATLABKernel):
         self.mwi_comm_helper = MWICommHelper(
             self.kernel_id, murl, shell_loop, control_loop, headers, self.log
         )
-        await self.mwi_comm_helper.connect()
 
     def _process_children(self):
         """Overrides the _process_children in kernelbase class to not return the list of children

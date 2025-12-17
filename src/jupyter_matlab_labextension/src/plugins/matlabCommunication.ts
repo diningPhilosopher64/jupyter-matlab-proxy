@@ -15,6 +15,7 @@ import { KernelMessage, Kernel } from '@jupyterlab/services';
 import { JSONObject, JSONValue, Token } from '@lumino/coreutils';
 import { DisposableDelegate } from '@lumino/disposable';
 import { NotebookInfo } from '../utils/notebook';
+import { ActionFactory } from './actions/actionFactory';
 
 // Add more action types as needed
 type CommunicationData = {
@@ -124,6 +125,11 @@ implements
                 comm.onMsg = (msg: KernelMessage.ICommMsgMsg) => {
                     const data = msg.content.data as CommunicationData;
                     console.debug('Recieved data from kernel: ', data);
+                    const actionType = data!.action as string;
+                    const action = ActionFactory.createAction(actionType, false, panel);
+
+                    // Execute onMsg handler for the current action after receiving the response from the kernel
+                    action.onMsg(data, comm);
                 };
 
                 // Handle comm close

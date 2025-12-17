@@ -15,5 +15,6 @@ module.exports = {
   moduleNameMapper: {
     // Mock @jupyterlab/ui-components to avoid ES modules issues
     "@jupyterlab/ui-components": "<rootDir>/src/tests/mocks/ui-components.js",
+    "@jupyterlab/apputils": "<rootDir>/src/tests/mocks/apputils.js",
   },
 };

@@ -14,6 +14,7 @@ export class NotebookInfo {
     private _isMatlabNotebook: boolean = false;
     private _isBusy: boolean = false;
     private _panel: NotebookPanel | null = null;
+    private _targetURL: string | undefined = undefined;
 
     /*
      * Whether the current notebook’s kernelspec indicates MATLAB.
@@ -22,6 +23,10 @@ export class NotebookInfo {
     */
     isMatlabNotebook (): boolean {
         return this._isMatlabNotebook;
+    }
+
+    getTargetURL (): string | undefined {
+        return this._targetURL;
     }
 
     /*
@@ -97,11 +102,15 @@ export class NotebookInfo {
             if (!panel.sessionContext.isReady) {
                 await panel.sessionContext.ready;
             }
+
+            // Update all properties based on the provided panel
             this._panel = panel;
             this._isMatlabNotebook = panel.sessionContext.kernelDisplayName === 'MATLAB Kernel';
             const context = panel.context;
             this._isBusy = panel.sessionContext.session?.kernel?.status === 'busy';
             this._notebookName = context.path;
+            const kernelID = panel.sessionContext.session?.kernel?.id;
+            this._targetURL = PageConfig.getBaseUrl() + 'matlab/' + kernelID + '/';
         } else {
             this._notebookName = undefined;
             this._isMatlabNotebook = false;
