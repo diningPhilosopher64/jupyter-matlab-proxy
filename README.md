@@ -201,19 +201,13 @@ To access more MATLAB features, you can open the MATLAB development environment 
 
 Notebooks in JupyterLab also have a `Open MATLAB` drop-down menu on the toolbar:
 
-<!-- <img width="300" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/open-matlab-button.png"> -->
-<img width="300" src="./img/open-matlab-button.png">
+<img width="300" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/open-matlab-button.png">
 
 Clicking `Open MATLAB` opens the MATLAB development environment in a new browser tab.
-
-
-<img width="300" src="./img/open-as-live-code.png">
-<!-- <img width="300" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/open-as-live-code.png"> -->
+<img width="300" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/open-as-live-code.png">
 
 Clicking `Open as Live Code in MATLAB` opens the MATLAB development environment in a new browser tab with the opened IPYNB notebook converted to a Live Code file.
-<p><img width="900" src="./img/ipynb-to-livecode-conversion.gif"></p>
-
-<!-- <p><img width="900" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/ipynb-to-livecode-conversion.gif"></p> -->
+<p><img width="900" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/ipynb-to-livecode-conversion.gif"></p> 
 
 
 When you use the package for the first time, enter your MATLAB license information in the dialog box that appears. See [Licensing](https://github.com/mathworks/matlab-proxy/blob/main/MATLAB-Licensing-Info.md) for details.
