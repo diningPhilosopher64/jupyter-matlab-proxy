@@ -65,7 +65,8 @@ export class NotebookInfo {
             throw Error('No notebook panel provided');
         } else {
             return new Promise((resolve) => {
-                if (this._panel!.sessionContext.session?.kernel?.status === 'idle') {
+                const kernel = this._panel!.sessionContext.session?.kernel;
+                if (kernel?.status === 'idle') {
                     resolve();
                 } else {
                     const onStatusChanged = (connection: any, status: string) => {
@@ -75,9 +76,7 @@ export class NotebookInfo {
                             resolve();
                         }
                     };
-                    this._panel!.sessionContext.session?.kernel?.statusChanged.connect(
-                        onStatusChanged
-                    );
+                    kernel?.statusChanged.connect(onStatusChanged);
                 }
             });
         }

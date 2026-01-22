@@ -1,70 +1,12 @@
 // Copyright 2025 The MathWorks, Inc.
 
-import { showDialog, Dialog, InputDialog } from '@jupyterlab/apputils';
 import { PathExt } from '@jupyterlab/coreutils';
 import { NotebookPanel } from '@jupyterlab/notebook';
 import { ICommunicationChannel } from '../plugins/matlabCommunication';
 import { ActionFactory } from '../plugins/actions/actionFactory';
 import { ActionTypes } from '../plugins/actions/actionTypes';
 import { CheckFileExistsAction } from '../plugins/actions/checkFileExistsAction';
-
-async function getNewFileName (
-    currentFileName: string,
-    mlxFileName: string
-): Promise<string | null> {
-    while (true) {
-        const result = await showDialog({
-            title: 'File already exists',
-            body: `A file named "${mlxFileName}" already exists. Do you want to overwrite it or choose a new name?`,
-            buttons: [
-                Dialog.cancelButton(),
-                Dialog.okButton({ label: 'Overwrite' }),
-                Dialog.okButton({ label: 'New Name' })
-            ]
-        });
-
-        if (result.button.label === 'New Name') {
-            const newNameResult = await InputDialog.getText({
-                title: 'Enter a new name for the MLX file',
-                label: 'New file name (without extension):',
-                placeholder: 'Enter file name'
-            });
-
-            if (newNameResult.button.accept && newNameResult.value) {
-                console.debug(
-                    'new file name is ',
-                    newNameResult.value,
-                    ' currentfilename is ',
-                    currentFileName,
-                    newNameResult.value === currentFileName
-                );
-                // User chose not to overwrite but provided the same name again...
-                if (newNameResult.value === currentFileName) {
-                    await showDialog({
-                        title: 'Error',
-                        body: 'The new filename is the same as the old one. Please choose a different name.',
-                        buttons: [Dialog.okButton()]
-                    });
-                    continue;
-                }
-
-                return `${newNameResult.value}.mlx`;
-            } else {
-                // User cancelled, no need to proceed further
-                return null;
-            }
-        } else if (result.button.label === 'Overwrite') {
-            // User chose to overwrite the existing file
-            const mlxFileNameWithoutExtension = PathExt.basename(
-                currentFileName,
-                PathExt.extname(currentFileName)
-            );
-            return `${mlxFileNameWithoutExtension}.mlx`;
-        } else {
-            return null; // User cancelled, no need to proceed further
-        }
-    }
-}
+import { getNewFileNameDialog } from './dialogs';
 
 export async function getFileNameForConversion (
     notebook: NotebookPanel,
@@ -89,7 +31,7 @@ export async function getFileNameForConversion (
     const fileAlreadyExists = CheckFileExistsAction.getFileExistsStatus();
 
     if (fileAlreadyExists) {
-        const newFileName = await getNewFileName(notebookName, liveCodeFilePath);
+        const newFileName = await getNewFileNameDialog(notebookName, liveCodeFilePath);
         console.debug('New file name chosen by the user is ', newFileName);
         if (newFileName) {
             finalLiveCodeFilePath = PathExt.join(currentDir, newFileName);

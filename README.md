@@ -199,14 +199,14 @@ To access more MATLAB features, you can open the MATLAB development environment 
 | :---: | :---: |
 |<img width="200" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/open_matlab_notebook.png"> | <img width="300" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/open_matlab_jupyterlab.png"> |
 
-Notebooks in JupyterLab also have a `Open MATLAB` drop-down menu on the toolbar:
+Notebooks in JupyterLab also have an `Open MATLAB` drop-down button on the toolbar:
 
 <img width="300" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/open-matlab-button.png">
 
-Clicking `Open MATLAB` opens the MATLAB development environment in a new browser tab.
+Click `Open MATLAB` to open the MATLAB development environment in a new browser tab.
 <img width="300" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/open-as-live-code.png">
 
-Clicking `Open as Live Code in MATLAB` opens the MATLAB development environment in a new browser tab with the opened IPYNB notebook converted to a Live Code file.
+Click `Open as Live Code in MATLAB` to open the MATLAB development environment in a new browser tab with the opened IPYNB notebook converted to a Live Code file.
 <p><img width="900" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/ipynb-to-livecode-conversion.gif"></p> 
 
 

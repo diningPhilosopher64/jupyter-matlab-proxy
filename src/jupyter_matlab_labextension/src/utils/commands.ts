@@ -3,7 +3,8 @@ import { NotebookPanel } from '@jupyterlab/notebook';
 import { NotebookInfo } from '../utils/notebook';
 import { getFileNameForConversion } from './file';
 import { ICommunicationService } from '../plugins/matlabCommunication';
-import { displayKernelBusyNotification, displayUserSigninNotification } from './notifications';
+import { displayUserSigninNotification } from './notifications';
+import { showMatlabKernelIsBusyDialog } from './dialogs';
 
 export function getOpenMatlabCommandId (): string {
     return 'matlab:open-matlab';
@@ -47,7 +48,8 @@ export async function openAsLiveCodeInMatlabButtonHandler (
     await notebookInfo.update(panel);
 
     if (notebookInfo.isBusy()) {
-        displayKernelBusyNotification(notebookInfo);
+        await showMatlabKernelIsBusyDialog();
+        return;
     }
     const comm = await commService.getComm(panel.id);
     const finalLiveCodeFilePath = await getFileNameForConversion(

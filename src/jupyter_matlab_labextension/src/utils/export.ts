@@ -21,7 +21,8 @@ export async function exportHandler (
     await notebookInfo.update(panel);
 
     if (notebookInfo.isBusy()) {
-        displayKernelBusyNotification(notebookInfo);
+        displayKernelBusyNotification();
+        return;
     }
     const comm = await commService.getComm(panel.id);
 

@@ -105,25 +105,21 @@ def start_matlab_proxy(logger=_logger):
     # Error out if the server is not found!
     if not found_nb_server:
         logger.error("Jupyter server associated with this MATLABKernel not found.")
-        raise MATLABConnectionError(
-            """
+        raise MATLABConnectionError("""
             Error: MATLAB Kernel for Jupyter was unable to find the notebook server from which it was spawned!\n
             Resolution: Please relaunch kernel from JupyterLab or Classic Jupyter Notebook.
-            """
-        )
+            """)
 
     # Verify that Password is disabled
     if nb_server["password"] is True:
         logger.error("Jupyter server uses password for authentication.")
         # TODO: To support passwords, we either need to acquire it from Jupyter or ask the user?
-        raise MATLABConnectionError(
-            """
+        raise MATLABConnectionError("""
             Error: MATLAB Kernel could not communicate with MATLAB.\n
             Reason: There is a password set to access the Jupyter server.\n
             Resolution: Delete the cached Notebook password file, and restart the kernel.\n
             See https://jupyter-notebook.readthedocs.io/en/stable/public_server.html#securing-a-notebook-server for more information.
-            """
-        )
+            """)
 
     # Using nb_server["url"] to construct matlab-proxy URL as it handles the following cases
     # 1. For normal usage of Jupyter, the URL returned by nb_server uses localhost
@@ -156,12 +152,10 @@ def start_matlab_proxy(logger=_logger):
         "MATLABKernel could not communicate with matlab-proxy through Jupyter server"
     )
     logger.error(f"Jupyter server:\n{nb_server}")
-    raise MATLABConnectionError(
-        """
+    raise MATLABConnectionError("""
                 Error: MATLAB Kernel could not communicate with MATLAB.
                 Reason: Possibly due to invalid jupyter security tokens.
-                """
-    )
+                """)
 
 
 class MATLABKernelUsingJSP(base.BaseMATLABKernel):

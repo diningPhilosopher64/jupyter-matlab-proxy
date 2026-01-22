@@ -108,7 +108,6 @@ describe('getFileNameForConversion', () => {
         expect(result).toBe('/notebook.mlx');
     });
 
-
     it('returns new filename when user enters a new name', async () => {
         mockedFileStatus.mockReturnValue(true);
 

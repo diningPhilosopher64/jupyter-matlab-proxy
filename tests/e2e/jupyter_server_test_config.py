@@ -16,6 +16,7 @@ Note that 'c' below is an instance of Jupyter's configuration class. This file
 is parsed by Jupyter and the below modifications to configuration class are
 applied.
 """
+
 import os
 from pathlib import Path
 from tempfile import mkdtemp

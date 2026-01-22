@@ -61,7 +61,6 @@ const mockedConvertGetPath = ConvertAction.getGeneratedLiveCodeFilePath as jest.
 const mockedDisplayOpenMatlab = displayOpenMatlabNotification as jest.MockedFunction<typeof displayOpenMatlabNotification>;
 const mockedDisplayStarting = displayStartingMatlabNotification as jest.MockedFunction<typeof displayStartingMatlabNotification>;
 
-
 describe('matlab utils', () => {
     let panel: any;
     let comm: any;

@@ -9,9 +9,9 @@ jest.mock('@jupyterlab/notebook', () => ({
 }));
 
 jest.mock('@lumino/widgets', () => ({
-  Menu: jest.fn().mockImplementation(() => ({
-    addItem: jest.fn()
-  }))
+    Menu: jest.fn().mockImplementation(() => ({
+        addItem: jest.fn()
+    }))
 }));
 
 // jest.mock('../../utils/notebook', () => ({
@@ -36,27 +36,25 @@ jest.mock('@jupyterlab/mainmenu', () => ({
     }))
 }));
 
-
 jest.mock('../../utils/file', () => ({
-  getFileNameForConversion: jest.fn()
+    getFileNameForConversion: jest.fn()
 }));
 
 jest.mock('../../utils/matlab', () => ({
-  convertToLiveCode: jest.fn(),
-  startMatlab: jest.fn(),
-  waitForMatlabToStart: jest.fn(),
-  waitForUserToSignin: jest.fn()
+    convertToLiveCode: jest.fn(),
+    startMatlab: jest.fn(),
+    waitForMatlabToStart: jest.fn(),
+    waitForUserToSignin: jest.fn()
 }));
 
 jest.mock('../../utils/notifications', () => ({
-  displayKernelBusyNotification: jest.fn(),
-  displayUserSigninNotification: jest.fn()
+    displayKernelBusyNotification: jest.fn(),
+    displayUserSigninNotification: jest.fn()
 }));
 
 jest.mock('@jupyterlab/apputils', () => ({
-  Notification: { info: jest.fn() }
+    Notification: { info: jest.fn() }
 }));
-
 
 describe('matlabExportPlugin', () => {
     let app: any;
@@ -65,134 +63,131 @@ describe('matlabExportPlugin', () => {
     let notebookTracker: any;
     let commService: any;
 
-  beforeEach(() => {
-    jest.clearAllMocks();
+    beforeEach(() => {
+        jest.clearAllMocks();
 
-    app = {
-      commands: {
-        addCommand: jest.fn(),
-        hasCommand: jest.fn().mockReturnValue(true),
-        notifyCommandChanged: jest.fn()
-      }
-    };
-
-    palette = { addItem: jest.fn() };
-
-    mainMenu = {
-      fileMenu: {
-        items: [{
-          type: 'submenu',
-          submenu: { title: { label: 'Save and Export Notebook As' }, addItem: jest.fn() }
-        }]
-      }
-    };
-
-    notebookTracker = {
-      currentWidget: {
-        context: { ready: Promise.resolve() },
-        sessionContext: {
-                isReady: false,
-                ready: Promise.resolve(),
-                session: {
-                    kernel: null
-                }
+        app = {
+            commands: {
+                addCommand: jest.fn(),
+                hasCommand: jest.fn().mockReturnValue(true),
+                notifyCommandChanged: jest.fn()
             }
-      },
-      widgetAdded: { connect: jest.fn() },
-      currentChanged: { connect: jest.fn() }
-    };
+        };
 
-    commService = {} as ICommunicationService;
-  });
+        palette = { addItem: jest.fn() };
 
-  // --------------------------
-  // ACTIVATE TEST
-  // --------------------------
-  it('activates and registers commands, palette items, menu items', async () => {
-    await matlabExportPlugin.activate(
-      app,
-      palette,
-      mainMenu,
-      notebookTracker,
-      commService
-    );
+        mainMenu = {
+            fileMenu: {
+                items: [{
+                    type: 'submenu',
+                    submenu: { title: { label: 'Save and Export Notebook As' }, addItem: jest.fn() }
+                }]
+            }
+        };
 
-    // palette command registered
-    expect(app.commands.addCommand).toHaveBeenCalledTimes(2);
-    expect(palette.addItem).toHaveBeenCalledTimes(1);
+        notebookTracker = {
+            currentWidget: {
+                context: { ready: Promise.resolve() },
+                sessionContext: {
+                    isReady: false,
+                    ready: Promise.resolve(),
+                    session: {
+                        kernel: null
+                    }
+                }
+            },
+            widgetAdded: { connect: jest.fn() },
+            currentChanged: { connect: jest.fn() }
+        };
 
-    // menu item added
-    const submenu = mainMenu.fileMenu.items[0].submenu;
-    expect(submenu.addItem).toHaveBeenCalledTimes(1);
+        commService = {} as ICommunicationService;
+    });
 
-    // listeners installed
-    expect(notebookTracker.widgetAdded.connect).toHaveBeenCalled();
-    expect(notebookTracker.currentChanged.connect).toHaveBeenCalled();
-  });
+    // --------------------------
+    // ACTIVATE TEST
+    // --------------------------
+    it('activates and registers commands, palette items, menu items', async () => {
+        await matlabExportPlugin.activate(
+            app,
+            palette,
+            mainMenu,
+            notebookTracker,
+            commService
+        );
 
-  it('should debug log when there is no widget and buttons should not be enabled', async () => {
-    const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
+        // palette command registered
+        expect(app.commands.addCommand).toHaveBeenCalledTimes(2);
+        expect(palette.addItem).toHaveBeenCalledTimes(1);
 
-    notebookTracker.currentWidget = null;
-    await matlabExportPlugin.activate(
-    app,
-    palette,
-    mainMenu,
-    notebookTracker,
-    commService
-    );
+        // menu item added
+        const submenu = mainMenu.fileMenu.items[0].submenu;
+        expect(submenu.addItem).toHaveBeenCalledTimes(1);
 
+        // listeners installed
+        expect(notebookTracker.widgetAdded.connect).toHaveBeenCalled();
+        expect(notebookTracker.currentChanged.connect).toHaveBeenCalled();
+    });
 
-    // palette command registered
-    expect(app.commands.addCommand).toHaveBeenCalledTimes(2);
-    expect(palette.addItem).toHaveBeenCalledTimes(1);
+    it('should debug log when there is no widget and buttons should not be enabled', async () => {
+        const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
 
-    // menu item added
-    const submenu = mainMenu.fileMenu.items[0].submenu;
-    expect(submenu.addItem).toHaveBeenCalledTimes(1);
+        notebookTracker.currentWidget = null;
+        await matlabExportPlugin.activate(
+            app,
+            palette,
+            mainMenu,
+            notebookTracker,
+            commService
+        );
 
-    // listeners installed
-    expect(notebookTracker.widgetAdded.connect).toHaveBeenCalled();
-    expect(notebookTracker.currentChanged.connect).toHaveBeenCalled();
+        // palette command registered
+        expect(app.commands.addCommand).toHaveBeenCalledTimes(2);
+        expect(palette.addItem).toHaveBeenCalledTimes(1);
 
-    expect(debugSpy).toHaveBeenCalled();
-    expect(debugSpy).toHaveBeenCalledWith("No active notebook on plugin activation");
+        // menu item added
+        const submenu = mainMenu.fileMenu.items[0].submenu;
+        expect(submenu.addItem).toHaveBeenCalledTimes(1);
 
-    expect(app.commands.addCommand.mock.calls[0][1].isEnabled()).toBe(false);
-    expect(app.commands.addCommand.mock.calls[1][1].isEnabled()).toBe(false);
-  });
+        // listeners installed
+        expect(notebookTracker.widgetAdded.connect).toHaveBeenCalled();
+        expect(notebookTracker.currentChanged.connect).toHaveBeenCalled();
 
-  it('should not add export option to FileMenu when no submenu for export is found', async () => {
+        expect(debugSpy).toHaveBeenCalled();
+        expect(debugSpy).toHaveBeenCalledWith('No active notebook on plugin activation');
 
-    mainMenu = {
-      fileMenu: {
-        items: [{
-          type: 'menu',
-          submenu: { title: { label: 'File' }, addItem: jest.fn() }
-        }]
-      }
-    };
+        expect(app.commands.addCommand.mock.calls[0][1].isEnabled()).toBe(false);
+        expect(app.commands.addCommand.mock.calls[1][1].isEnabled()).toBe(false);
+    });
 
-    notebookTracker.currentWidget = null;
-    await matlabExportPlugin.activate(
-    app,
-    palette,
-    mainMenu,
-    notebookTracker,
-    commService
-    );
+    it('should not add export option to FileMenu when no submenu for export is found', async () => {
+        mainMenu = {
+            fileMenu: {
+                items: [{
+                    type: 'menu',
+                    submenu: { title: { label: 'File' }, addItem: jest.fn() }
+                }]
+            }
+        };
 
-    // palette command registered
-    expect(app.commands.addCommand).toHaveBeenCalledTimes(1);
-    expect(palette.addItem).toHaveBeenCalledTimes(1);
+        notebookTracker.currentWidget = null;
+        await matlabExportPlugin.activate(
+            app,
+            palette,
+            mainMenu,
+            notebookTracker,
+            commService
+        );
 
-    // menu item added
-    const submenu = mainMenu.fileMenu.items[0].submenu;
-    expect(submenu.addItem).toHaveBeenCalledTimes(0);
+        // palette command registered
+        expect(app.commands.addCommand).toHaveBeenCalledTimes(1);
+        expect(palette.addItem).toHaveBeenCalledTimes(1);
 
-    // listeners installed
-    expect(notebookTracker.widgetAdded.connect).toHaveBeenCalled();
-    expect(notebookTracker.currentChanged.connect).toHaveBeenCalled();
-  });
+        // menu item added
+        const submenu = mainMenu.fileMenu.items[0].submenu;
+        expect(submenu.addItem).toHaveBeenCalledTimes(0);
 
+        // listeners installed
+        expect(notebookTracker.widgetAdded.connect).toHaveBeenCalled();
+        expect(notebookTracker.currentChanged.connect).toHaveBeenCalled();
+    });
 });

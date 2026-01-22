@@ -23,104 +23,8 @@ class EditAction(ActionCommand):
         """
         return f"edit('{mlx_file_path}'); clear ans;"
 
-    async def __wait_for_client_type_to_be_set(self):
-        client_type_code = "connector.internal.getClientType"
-
-        time_taken, time_out = 0, 30
-        while True:
-            await asyncio.sleep(1)
-
-            # Keep checking if client type is set
-            try:
-                eval_response = (
-                    await self.kernel.mwi_comm_helper.send_eval_request_to_matlab(
-                        client_type_code
-                    )
-                )
-
-                if eval_response["isError"]:
-                    self.log.error(
-                        f"Error raised when checking client type :{eval_response['responseStr']}"
-                    )
-
-                elif "jsd_rmt_tmw" in eval_response["responseStr"]:
-                    self.log.debug("Client type has been set successfully")
-                    # Sleep for a second to ensure client type is set.
-                    await asyncio.sleep(1)
-                    break
-
-            except Exception as err:
-                self.log.error(f"Edit action failed with error: {err}")
-                raise err
-
-            finally:
-                time_taken += 1
-                if time_taken > time_out:
-                    err = TimeoutError(
-                        f"Failed to set client type within {time_out} seconds."
-                    )
-                    self.log.error(err)
-                    raise err
-
-    def __check_if_desktop_is_inuse(self, response_str):
-        match = re.search(r"logical.*?\n\s*(\d)", response_str, re.S)
-        if match:
-            value = int(match.group(1))
-            return value == 1
-
-        else:
-            raise ValueError(
-                f"Could not parse logical value from response string. Received string: {response_str}"
-            )
-
-    async def __wait_for_desktop_to_be_inuse(self):
-        self.log.info("\n\n Going to wait for desktop to be in use \n\n")
-        desktop_inuse_code = "desktop('-inuse')"
-
-        start = time.time()
-
-        time_taken, time_out = 0, 30
-        while True:
-            # Keep checking if client type is set
-            try:
-                eval_response = (
-                    await self.kernel.mwi_comm_helper.send_eval_request_to_matlab(
-                        desktop_inuse_code
-                    )
-                )
-
-                if eval_response["isError"]:
-                    self.log.error(
-                        f"Error raised when checking client type :{eval_response['responseStr']}"
-                    )
-
-                else:
-                    if self.__check_if_desktop_is_inuse(eval_response["responseStr"]):
-                        self.log.info("Desktop is in use")
-                        break
-                    else:
-                        self.log.info("Desktop is not in use yet, retrying...")
-                        await asyncio.sleep(0.25)
-
-            except Exception as err:
-                self.log.error(f"Edit action failed with error: {err}")
-                raise err
-
-            finally:
-                end = time.time()
-                if time_taken > time_out:
-                    err = TimeoutError(
-                        f"Failed to set client type within {time_out} seconds."
-                    )
-                    self.log.error(err)
-                    raise err
-
-        self.log.info(
-            f"\n\nTime taken so far to check desktop in use: {end - start} seconds"
-        )
-
-    def __check_if_rootapp_instance_is_set(self, your_string):
-        match = re.search(r"^\s*State:\s*(\S+)", your_string, re.MULTILINE)
+    def __check_if_rootapp_instance_is_set(self, string):
+        match = re.search(r"^\s*State:\s*(\S+)", string, re.MULTILINE)
         if match:
             state = match.group(1)
             return state == "RUNNING"
@@ -132,7 +36,7 @@ class EditAction(ActionCommand):
 
         time_taken, time_out = 0, 30
         while True:
-            # Keep checking if client type is set
+            # Keep checking if instance is set
             try:
                 eval_response = (
                     await self.kernel.mwi_comm_helper.send_eval_request_to_matlab(

@@ -16,12 +16,12 @@ class MatlabStatusAction(ActionCommand):
 
     async def execute(self, comm, _):
         try:
-            self.log.debug("Fetching MATLAB proxy status...")           
+            self.log.debug("Fetching MATLAB proxy status...")
             status = await self.kernel.mwi_comm_helper.fetch_matlab_proxy_status()
 
             self.log.debug(
                 f"MatlabStatus action successful.Licensing Status: '{status.is_matlab_licensed}', Status: '{status.matlab_status}' "
-            )            
+            )
             comm.send(
                 {
                     "action": ActionTypes.MATLAB_STATUS.value,

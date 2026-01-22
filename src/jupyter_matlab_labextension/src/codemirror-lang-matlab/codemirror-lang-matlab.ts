@@ -34,7 +34,7 @@ export const matlabLanguage = LRLanguage.define({
                 Script: determineLineIndent
             })
         ]
-    }),
+    }) as any,
     languageData: {
         commentTokens: { line: '%' },
         indentOnInput: getDedentPattern()

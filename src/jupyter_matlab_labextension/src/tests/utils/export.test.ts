@@ -132,7 +132,6 @@ describe('exportHandler', () => {
         expect(fakeWindow.close).toHaveBeenCalled();
     });
 
-
     it('executes full conversion flow', async () => {
         mockedGetFileNameForConversion.mockResolvedValue('file.mlx');
         mockedStartMatlab.mockResolvedValue({ isLicensed: true });

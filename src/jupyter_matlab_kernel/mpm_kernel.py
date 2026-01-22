@@ -119,14 +119,12 @@ class MATLABKernelUsingMPM(base.BaseMATLABKernel):
             )
         except Exception as e:
             _logger.error(f"MATLAB Kernel could not start matlab-proxy, Reason: {e}")
-            raise MATLABConnectionError(
-                f"""
+            raise MATLABConnectionError(f"""
                 Error: MATLAB Kernel could not start the MATLAB proxy process.
                 Reason: {e}
                 Resolution: Run the troubleshooting script described in the file `troubleshooting.md`.
                 If the issue persists, create an issue on Github: https://github.com/mathworks/jupyter-matlab-proxy/issues.
-                """
-            ) from e
+                """) from e
 
     async def _initialize_mwi_comm_helper(self, murl, headers):
         """

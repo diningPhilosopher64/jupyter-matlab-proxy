@@ -36,9 +36,9 @@ export class CheckFileExistsAction extends BaseAction {
         }
 
         if (this.sendCheckFileExistsRequest(data.liveCodeFilePath, comm)) {
-            console.debug('Successfully sent check file exists request to kernel');
+            console.debug('Successfully sent check file exists request to kernel.');
         } else {
-            console.error('Failed to send check file exists request to kernel');
+            console.error('Failed to send check file exists request to kernel.');
         }
 
         if (this.blocking) {

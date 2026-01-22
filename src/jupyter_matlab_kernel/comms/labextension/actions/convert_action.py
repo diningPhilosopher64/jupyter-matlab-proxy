@@ -93,6 +93,12 @@ class ConvertAction(ActionCommand):
         try:
             # First convert from .ipynb to live code .mlx
             code = self.get_code(ipynb_filepath, livecode_filepath)
+
+            # TODO: This eval request to clear console can be removed once the kernel's interrupt_request or related interrupt
+            # infrastructure is enhanced to handle stack output of a recent interrupt request. Until then, always send a clc; before
+            # conversion to ensure any previous interrupt stack output is cleared from the console.
+            _ = await self.kernel.mwi_comm_helper.send_eval_request_to_matlab("clc;")
+
             eval_response = (
                 await self.kernel.mwi_comm_helper.send_eval_request_to_matlab(code)
             )
@@ -115,7 +121,7 @@ class ConvertAction(ActionCommand):
             self.log.debug(
                 f"Successfully generated Live Code file at {str(livecode_filepath)}"
             )
-            
+
             status = await self.kernel.mwi_comm_helper.fetch_matlab_proxy_status()
 
             # Additionally convert from .mlx to live code .m is required (for 25a or later versions)
