@@ -66,7 +66,7 @@ export function displayConversionNotification (
                 ) {
                     console.debug('Successfully sent convert request to MATLAB.');
                 } else {
-                    console.error('Failed to send convert request to MATLAB.');
+                    console.error('Failed to send conversion request to MATLAB.');
                 }
 
                 setTimeout(() => {
