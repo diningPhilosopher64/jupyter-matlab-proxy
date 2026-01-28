@@ -49,8 +49,8 @@ export async function getNewFileNameDialog (
 
 export async function showMatlabKernelIsBusyDialog (): Promise<void> {
     await showDialog({
-        title: 'MATLAB Kernel is Busy',
-        body: 'The MATLAB kernel is currently busy. Please wait for the current operation to complete.',
+        title: 'MATLAB Kernel Busy',
+        body: 'The MATLAB kernel must be idle to open the Notebook as Live Code in MATLAB. Try again when the MATLAB kernel is idle.',
         buttons: [Dialog.okButton()]
     });
 }

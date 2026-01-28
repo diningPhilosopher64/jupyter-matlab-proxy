@@ -8,7 +8,7 @@ export async function displayUserSigninNotification () : Promise<PromiseDelegate
     Notification.promise(userSigninPromise.promise, {
         pending: {
             message: ((): string => {
-                return 'Waiting for user to sign in to MATLAB...';
+                return 'Waiting for user to sign in to MATLAB.';
             })(),
             options: { autoClose: false }
         },
@@ -84,11 +84,11 @@ export function displayConversionNotification (
         },
         success: {
             message: (): string => {
-                return 'Conversion successful';
+                return 'Notebook converted successfully.';
             },
             options: { autoClose: 3000 }
         },
-        error: { message: () => 'Failed conversion' }
+        error: { message: () => 'Unable to convert notebook.' }
     });
 
     return conversionPromise;
