@@ -1,53 +1,86 @@
 // Copyright 2025 The MathWorks, Inc.
 
-// Mock the icons module
 import {
-    insertButton,
     MatlabToolbarButtonExtension,
     matlabToolbarButtonPlugin
-} from '../plugins/matlabToolbarButton';
+} from '../../plugins/matlabToolbarButton';
 import { NotebookPanel, INotebookModel } from '@jupyterlab/notebook';
 import { JupyterFrontEnd } from '@jupyterlab/application';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
+import { ToolbarButton } from '@jupyterlab/apputils';
+import { Menu } from '@lumino/widgets';
 import { Signal } from '@lumino/signaling';
 
-jest.mock('../icons', () => ({
+// Mock the icons module
+jest.mock('../../icons', () => ({
     matlabIcon: {
         name: 'matlab-icon',
         svgstr: '<svg></svg>'
     }
 }));
 
-// Mock JupyterLab dependencies
+// Mock JupyterLab dependencies - must be before imports
+jest.mock('@jupyterlab/notebook', () => ({
+    NotebookPanel: jest.fn()
+}));
+
 jest.mock('@jupyterlab/apputils', () => ({
     ToolbarButton: jest.fn().mockImplementation((options: any) => ({
         ...options,
+        node: {
+            getBoundingClientRect: jest.fn().mockReturnValue({ left: 10, bottom: 20 })
+        },
         dispose: jest.fn()
     }))
 }));
 
 jest.mock('@jupyterlab/coreutils', () => ({
     PageConfig: {
-        getBaseUrl: jest.fn().mockReturnValue('http://localhost:8888/')
+        getBaseUrl: jest.fn().mockReturnValue('http://localhost:8888/'),
+        getOption: jest.fn().mockReturnValue('/home/user')
     }
 }));
 
-// Mock window.open
-const originalWindowOpen = window.open;
-window.open = jest.fn();
+jest.mock('@lumino/widgets', () => ({
+    Menu: jest.fn().mockImplementation(() => ({
+        addItem: jest.fn(),
+        open: jest.fn(),
+        dispose: jest.fn()
+    }))
+}));
+
+// Mock NotebookInfo
+jest.mock('../../utils/notebook', () => ({
+    NotebookInfo: jest.fn().mockImplementation(() => ({
+        update: jest.fn().mockResolvedValue(undefined),
+        isMatlabNotebook: jest.fn().mockReturnValue(true),
+        getTargetURL: jest.fn().mockReturnValue('http://localhost:8888/matlab/kernel-123/')
+    }))
+}));
+
+// Mock commands
+jest.mock('../../utils/commands', () => ({
+    getOpenMatlabCommandId: jest.fn().mockReturnValue('matlab:open'),
+    getOpenAsLiveCodeMLXInMatlabCommandId: jest.fn().mockReturnValue('matlab:openAsLiveCode'),
+    openMatlabButtonHandler: jest.fn(),
+    openAsLiveCodeInMatlabButtonHandler: jest.fn()
+}));
 
 // Mock for NotebookPanel with kernel change signal
 const createMockNotebookPanel = (kernelDisplayName = 'MATLAB Kernel', kernelId = '12345') => {
     const kernelChangedSignal = new Signal<any, any>({});
 
     return {
+        id: 'notebook-panel-1',
+        context: { path: 'test.ipynb' },
         sessionContext: {
             ready: Promise.resolve(),
             kernelDisplayName,
             session: kernelId
                 ? {
                     kernel: {
-                        id: kernelId
+                        id: kernelId,
+                        status: 'idle'
                     }
                 }
                 : null,
@@ -55,7 +88,6 @@ const createMockNotebookPanel = (kernelDisplayName = 'MATLAB Kernel', kernelId =
             initialize: jest.fn(),
             isReady: true,
             isTerminating: false,
-            // Add other required methods as
             dispose: jest.fn()
         },
         toolbar: {
@@ -65,11 +97,21 @@ const createMockNotebookPanel = (kernelDisplayName = 'MATLAB Kernel', kernelId =
     };
 };
 
+// Mock for ICommunicationService
+const createMockCommService = () => ({
+    getComm: jest.fn().mockResolvedValue({})
+});
+
 // Mock for JupyterFrontEnd
 const createMockJupyterFrontEnd = () => ({
+    commands: {
+        addCommand: jest.fn()
+    },
+    shell: {
+        currentWidget: null
+    },
     docRegistry: {
         addWidgetExtension: jest.fn(),
-        // Add other required properties with mock implementations
         changed: { connect: jest.fn() },
         isDisposed: false,
         dispose: jest.fn(),
@@ -77,268 +119,259 @@ const createMockJupyterFrontEnd = () => ({
     }
 });
 
-describe('matlab_browser_button', () => {
+describe('matlabToolbarButton', () => {
     afterEach(() => {
         jest.clearAllMocks();
-    });
-
-    afterAll(() => {
-        window.open = originalWindowOpen;
-    });
-
-    describe('insertButton', () => {
-        test('should insert button when kernel is MATLAB Kernel with valid kernel ID', async () => {
-            // Arrange
-            const panel = createMockNotebookPanel('MATLAB Kernel', 'test-kernel-123');
-
-            // Act
-            await insertButton(panel as unknown as NotebookPanel);
-
-            // Assert
-            expect(panel.toolbar!.insertItem).toHaveBeenCalledWith(
-                10,
-                'matlabToolbarButton',
-                expect.objectContaining({
-                    className: 'openMATLABButton matlab-toolbar-button-spaced',
-                    label: 'Open MATLAB'
-                })
-            );
-        });
-
-        test('should not insert button when kernel is not MATLAB Kernel', async () => {
-            // Arrange
-            const panel = createMockNotebookPanel('Python 3');
-
-            // Act
-            await insertButton(panel as unknown as NotebookPanel);
-
-            // Assert
-            expect(panel.toolbar!.insertItem).not.toHaveBeenCalled();
-        });
-
-        test('should not insert button when kernel ID is empty', async () => {
-            const panel = createMockNotebookPanel('MATLAB Kernel', '');
-
-            await insertButton(panel as unknown as NotebookPanel);
-
-            expect(panel.toolbar.insertItem).not.toHaveBeenCalled();
-        });
-
-        test('should not insert button when session is null', async () => {
-            const panel = createMockNotebookPanel('MATLAB Kernel');
-            panel.sessionContext.session = null;
-
-            await insertButton(panel as unknown as NotebookPanel);
-
-            expect(panel.toolbar.insertItem).not.toHaveBeenCalled();
-        });
-
-        test('should not insert button when kernel is null', async () => {
-            const panel = createMockNotebookPanel('MATLAB Kernel');
-            panel.sessionContext.session = { kernel: null as any };
-
-            await insertButton(panel as unknown as NotebookPanel);
-
-            expect(panel.toolbar.insertItem).not.toHaveBeenCalled();
-        });
-
-        test('should construct correct target URL with kernel ID', async () => {
-            const ToolbarButtonMock = jest.requireMock('@jupyterlab/apputils').ToolbarButton;
-            let capturedOnClick: () => void = () => {};
-
-            ToolbarButtonMock.mockImplementationOnce((options: any) => {
-                capturedOnClick = options.onClick;
-                return {
-                    ...options,
-                    dispose: jest.fn()
-                };
-            });
-
-            const panel = createMockNotebookPanel('MATLAB Kernel', 'kernel-abc-123');
-            await insertButton(panel as unknown as NotebookPanel);
-
-            capturedOnClick();
-
-            expect(window.open).toHaveBeenCalledWith(
-                'http://localhost:8888/matlab/kernel-abc-123/',
-                '_blank'
-            );
-        });
-
-        test('should wait for session context to be ready before checking kernel', async () => {
-            // Arrange
-            const readyPromise = new Promise<void>((resolve) =>
-                setTimeout(resolve, 10)
-            );
-            const panel = {
-                sessionContext: {
-                    ready: readyPromise,
-                    kernelDisplayName: 'MATLAB Kernel',
-                    session: {
-                        kernel: {
-                            id: 'test-kernel'
-                        }
-                    },
-                    kernelChanged: new Signal<any, any>({})
-                },
-                toolbar: {
-                    insertItem: jest.fn()
-                }
-            };
-
-            // Act
-            const insertPromise = insertButton(panel as any);
-
-            // Assert - insertItem should not be called before ready resolves
-            expect(panel.toolbar.insertItem).not.toHaveBeenCalled();
-
-            // Wait for ready promise to resolve
-            await insertPromise;
-
-            // Now insertItem should have been called
-            expect(panel.toolbar.insertItem).toHaveBeenCalled();
-        });
-
-        test('should update button onClick when kernel changes', async () => {
-            const ToolbarButtonMock = jest.requireMock('@jupyterlab/apputils').ToolbarButton;
-            const mockButton = {
-                onClick: jest.fn(),
-                dispose: jest.fn()
-            };
-
-            ToolbarButtonMock.mockReturnValue(mockButton);
-
-            const panel = createMockNotebookPanel('MATLAB Kernel', 'kernel-1');
-            await insertButton(panel as unknown as NotebookPanel);
-
-            // Simulate kernel change
-            panel.sessionContext.session = {
-                kernel: { id: 'kernel-2' }
-            };
-            panel.sessionContext.kernelChanged.emit({});
-
-            // Wait for async operations
-            await new Promise(resolve => setTimeout(resolve, 0));
-
-            expect(mockButton.onClick).toBeDefined();
-        });
-
-        test('should handle errors gracefully', async () => {
-            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-            const panel = {
-                sessionContext: {
-                    ready: Promise.reject(new Error('Session failed'))
-                }
-            };
-
-            const result = await insertButton(panel as any);
-
-            expect(consoleErrorSpy).toHaveBeenCalledWith(
-                'Failed to insert MATLAB toolbar button: ',
-                expect.any(Error)
-            );
-            expect(result.dispose).toBeDefined();
-
-            consoleErrorSpy.mockRestore();
-        });
+        // Reset the static commandsRegistered flag
+        (MatlabToolbarButtonExtension as any).commandsRegistered = false;
     });
 
     describe('MatlabToolbarButtonExtension', () => {
         let extension: MatlabToolbarButtonExtension;
         let panel: any;
         let context: any;
+        let commService: any;
+        let app: any;
 
         beforeEach(() => {
-            extension = new MatlabToolbarButtonExtension();
+            commService = createMockCommService();
+            app = createMockJupyterFrontEnd();
+            extension = new MatlabToolbarButtonExtension(commService, app);
             panel = createMockNotebookPanel('MATLAB Kernel', 'test-kernel');
             context = {};
         });
 
         test('should return a disposable object', () => {
-            // Act
             const result = extension.createNew(panel, context);
 
-            // Assert
             expect(result.dispose).toBeDefined();
             expect(typeof result.dispose).toBe('function');
         });
 
-        test('should call insertButton when createNew is invoked', () => {
-            const matlabButtonModule = require('../plugins/matlabToolbarButton');
-            const spy = jest
-                .spyOn(matlabButtonModule, 'insertButton')
-                .mockResolvedValue({ dispose: jest.fn() });
-
+        test('should insert toolbar button for MATLAB notebook', async () => {
             extension.createNew(
                 panel as unknown as NotebookPanel,
                 context as unknown as DocumentRegistry.IContext<INotebookModel>
             );
 
-            expect(spy).toHaveBeenCalledWith(panel);
+            // Wait for async operations
+            await panel.sessionContext.ready;
+            await new Promise(resolve => setTimeout(resolve, 0));
 
-            spy.mockRestore();
+            expect(panel.toolbar.insertItem).toHaveBeenCalledWith(
+                10,
+                'openMatlabButton',
+                expect.any(Object)
+            );
         });
 
-        test('should call insertButton with panel and button', () => {
-            // Arrange
-            // Import the module using ES modules syntax for TypeScript compatibility
-            const matlabButtonModule = require('../plugins/matlabToolbarButton');
-            const spy = jest
-                .spyOn(matlabButtonModule, 'insertButton')
-                .mockImplementation(() => Promise.resolve());
-
-            // Act
+        test('should register commands on first createNew call', async () => {
             extension.createNew(
                 panel as unknown as NotebookPanel,
                 context as unknown as DocumentRegistry.IContext<INotebookModel>
             );
 
-            // Assert
-            expect(spy).toHaveBeenCalledWith(panel);
+            await panel.sessionContext.ready;
+            await new Promise(resolve => setTimeout(resolve, 0));
 
-            // Cleanup
-            spy.mockRestore();
+            expect(app.commands.addCommand).toHaveBeenCalledWith(
+                'matlab:open',
+                expect.objectContaining({
+                    label: 'Open MATLAB'
+                })
+            );
+            expect(app.commands.addCommand).toHaveBeenCalledWith(
+                'matlab:openAsLiveCode',
+                expect.objectContaining({
+                    label: 'Open as Live Code in MATLAB'
+                })
+            );
+        });
+
+        test('should not register commands twice', async () => {
+            extension.createNew(
+                panel as unknown as NotebookPanel,
+                context as unknown as DocumentRegistry.IContext<INotebookModel>
+            );
+
+            await panel.sessionContext.ready;
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            const firstCallCount = app.commands.addCommand.mock.calls.length;
+
+            // Create another panel and call createNew again
+            const panel2 = createMockNotebookPanel('MATLAB Kernel', 'test-kernel-2');
+            extension.createNew(
+                panel2 as unknown as NotebookPanel,
+                context as unknown as DocumentRegistry.IContext<INotebookModel>
+            );
+
+            await panel2.sessionContext.ready;
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(app.commands.addCommand.mock.calls.length).toBe(firstCallCount);
+        });
+
+        test('should create menu with commands', async () => {
+            const MenuMock = Menu as unknown as jest.Mock;
+
+            extension.createNew(
+                panel as unknown as NotebookPanel,
+                context as unknown as DocumentRegistry.IContext<INotebookModel>
+            );
+
+            await panel.sessionContext.ready;
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(MenuMock).toHaveBeenCalledWith({ commands: app.commands });
+            const menuInstance = MenuMock.mock.results[0].value;
+            expect(menuInstance.addItem).toHaveBeenCalledWith({ command: 'matlab:open' });
+            expect(menuInstance.addItem).toHaveBeenCalledWith({ command: 'matlab:openAsLiveCode' });
+        });
+
+        test('should create ToolbarButton with correct options', async () => {
+            extension.createNew(
+                panel as unknown as NotebookPanel,
+                context as unknown as DocumentRegistry.IContext<INotebookModel>
+            );
+
+            await panel.sessionContext.ready;
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(ToolbarButton).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    className: 'openMATLABButton matlab-toolbar-button-spaced',
+                    label: 'Open MATLAB ▼',
+                    tooltip: 'Open MATLAB'
+                })
+            );
+        });
+
+        test('should not insert button for non-MATLAB notebook', async () => {
+            const { NotebookInfo } = require('../../utils/notebook');
+            NotebookInfo.mockImplementation(() => ({
+                update: jest.fn().mockResolvedValue(undefined),
+                isMatlabNotebook: jest.fn().mockReturnValue(false),
+                getTargetURL: jest.fn().mockReturnValue(undefined)
+            }));
+
+            const nonMatlabPanel = createMockNotebookPanel('Python 3', 'python-kernel');
+            extension.createNew(
+                nonMatlabPanel as unknown as NotebookPanel,
+                context as unknown as DocumentRegistry.IContext<INotebookModel>
+            );
+
+            await nonMatlabPanel.sessionContext.ready;
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(nonMatlabPanel.toolbar.insertItem).not.toHaveBeenCalled();
+        });
+
+        test('should log error when kernel is not ready', async () => {
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            const panelWithNoKernel = createMockNotebookPanel('MATLAB Kernel', '');
+            panelWithNoKernel.sessionContext.session = null;
+
+            extension.createNew(
+                panelWithNoKernel as unknown as NotebookPanel,
+                context as unknown as DocumentRegistry.IContext<INotebookModel>
+            );
+
+            await panelWithNoKernel.sessionContext.ready;
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith("Kernel not ready! Can't create toolbar button");
+
+            consoleErrorSpy.mockRestore();
+        });
+
+        test('should handle errors gracefully', async () => {
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            const panelWithError = {
+                sessionContext: {
+                    ready: Promise.reject(new Error('Session failed'))
+                }
+            };
+
+            extension.createNew(
+                panelWithError as unknown as NotebookPanel,
+                context as unknown as DocumentRegistry.IContext<INotebookModel>
+            );
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'Error initializing MATLAB toolbar button:',
+                expect.any(Error)
+            );
+
+            consoleErrorSpy.mockRestore();
+        });
+
+        test('should connect to kernelChanged signal', async () => {
+            // Reset NotebookInfo mock to return true for isMatlabNotebook
+            const { NotebookInfo } = require('../../utils/notebook');
+            NotebookInfo.mockImplementation(() => ({
+                update: jest.fn().mockResolvedValue(undefined),
+                isMatlabNotebook: jest.fn().mockReturnValue(true),
+                getTargetURL: jest.fn().mockReturnValue('http://localhost:8888/matlab/kernel-123/')
+            }));
+
+            const freshPanel = createMockNotebookPanel('MATLAB Kernel', 'test-kernel-fresh');
+            const connectSpy = jest.spyOn(freshPanel.sessionContext.kernelChanged, 'connect');
+
+            extension.createNew(
+                freshPanel as unknown as NotebookPanel,
+                context as unknown as DocumentRegistry.IContext<INotebookModel>
+            );
+
+            await freshPanel.sessionContext.ready;
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(connectSpy).toHaveBeenCalled();
         });
     });
 
     describe('matlabToolbarButtonPlugin', () => {
         test('should have correct id and autoStart properties', () => {
-            // Assert
             expect(matlabToolbarButtonPlugin.id).toBe(
                 '@mathworks/matlabToolbarButtonPlugin'
             );
             expect(matlabToolbarButtonPlugin.autoStart).toBe(true);
         });
 
+        test('should require IMatlabCommunication', () => {
+            expect(matlabToolbarButtonPlugin.requires).toBeDefined();
+            expect(matlabToolbarButtonPlugin.requires!.length).toBeGreaterThan(0);
+        });
+
         test('should register extension with docRegistry on activation', () => {
-            // Arrange
             const app = createMockJupyterFrontEnd();
+            const commService = createMockCommService();
 
-            // Act
-            matlabToolbarButtonPlugin.activate(app as unknown as JupyterFrontEnd);
+            matlabToolbarButtonPlugin.activate(
+                app as unknown as JupyterFrontEnd,
+                commService
+            );
 
-            // Assert
-            expect(app.docRegistry!.addWidgetExtension).toHaveBeenCalledWith(
+            expect(app.docRegistry.addWidgetExtension).toHaveBeenCalledWith(
                 'Notebook',
                 expect.any(MatlabToolbarButtonExtension)
             );
         });
 
         test('should create a MatlabToolbarButtonExtension instance on activation', () => {
-            // Arrange
             const app = createMockJupyterFrontEnd();
+            const commService = createMockCommService();
 
-            // Act
-            matlabToolbarButtonPlugin.activate(app as unknown as JupyterFrontEnd);
-
-            // Assert - Check if addWidgetExtension was called with an instance of MatlabToolbarButtonExtension
-            expect(app.docRegistry!.addWidgetExtension).toHaveBeenCalledWith(
-                'Notebook',
-                expect.any(MatlabToolbarButtonExtension)
+            matlabToolbarButtonPlugin.activate(
+                app as unknown as JupyterFrontEnd,
+                commService
             );
 
-            // Additional check - verify the argument is an instance of MatlabToolbarButtonExtension
-            const extensionArg = (app.docRegistry!.addWidgetExtension as jest.Mock)
+            const extensionArg = (app.docRegistry.addWidgetExtension as jest.Mock)
                 .mock.calls[0][1];
             expect(extensionArg).toBeInstanceOf(MatlabToolbarButtonExtension);
         });

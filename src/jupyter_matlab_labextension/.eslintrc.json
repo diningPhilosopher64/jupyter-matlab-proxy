@@ -6,7 +6,8 @@
     "sourceType": "module"
   },
   "env": {
-    "jest": true
+    "jest": true,
+    "browser": true
   },
   "plugins": ["@typescript-eslint"],
   "extends": ["standard"],

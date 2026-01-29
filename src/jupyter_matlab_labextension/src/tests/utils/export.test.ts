@@ -1,9 +1,10 @@
+// Copyright 2026 The MathWorks, Inc.
+
 import { exportHandler } from '../../utils/export';
-// import { NotebookInfo } from '../../utils/notebook';
 import {
-    displayKernelBusyNotification,
     displayUserSigninNotification
 } from '../../utils/notifications';
+import { showMatlabKernelIsBusyDialog } from '../../utils/dialogs';
 import {
     getFileNameForConversion
 } from '../../utils/file';
@@ -22,16 +23,18 @@ import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 // --------------------
 
 jest.mock('../../utils/notifications', () => ({
-    displayKernelBusyNotification: jest.fn(),
     displayUserSigninNotification: jest.fn()
 }));
-// const mockedDisplayKernelBusyNotification = displayKernelBusyNotification as jest.MockedFunction<typeof displayKernelBusyNotification>;
 const mockedDisplayUserSigninNotification = displayUserSigninNotification as jest.MockedFunction<typeof displayUserSigninNotification>;
+
+jest.mock('../../utils/dialogs', () => ({
+    showMatlabKernelIsBusyDialog: jest.fn()
+}));
+const mockedShowMatlabKernelIsBusyDialog = showMatlabKernelIsBusyDialog as jest.MockedFunction<typeof showMatlabKernelIsBusyDialog>;
 
 jest.mock('../../utils/file', () => ({
     getFileNameForConversion: jest.fn()
 }));
-// Typecast to a jest mocked function to be able to return custom values in tests
 const mockedGetFileNameForConversion = getFileNameForConversion as jest.MockedFunction<typeof getFileNameForConversion>;
 
 jest.mock('../../utils/matlab', () => ({
@@ -59,6 +62,7 @@ jest.mock('@jupyterlab/apputils', () => ({
 describe('exportHandler', () => {
     let commService: any;
     let panel: any;
+    const targetURL = 'http://localhost:8888/matlab/default/';
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -84,7 +88,7 @@ describe('exportHandler', () => {
     it('logs error when panel is null and returns early', async () => {
         const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-        await exportHandler(commService, null);
+        await exportHandler(commService, null, targetURL);
 
         expect(errorSpy).toHaveBeenCalledWith('No active notebook to export');
         expect(commService.getComm).not.toHaveBeenCalled();
@@ -92,19 +96,27 @@ describe('exportHandler', () => {
         errorSpy.mockRestore();
     });
 
-    it('shows busy notification when notebook is busy', async () => {
+    it('shows busy dialog when notebook is busy', async () => {
         mockedGetFileNameForConversion.mockResolvedValue('file.mlx');
-        mockedStartMatlab.mockResolvedValue({ isLicensed: true });
+        mockedStartMatlab.mockResolvedValue({
+            isMatlabLicensed: true,
+            matlabStatus: 'up',
+            matlabProxyHasError: false,
+            licensingMode: 'online',
+            matlabVersion: 'R2024a',
+            matlabRootPath: '/usr/local/MATLAB'
+        });
 
-        await exportHandler(commService, panel);
+        await exportHandler(commService, panel, targetURL);
 
-        expect(displayKernelBusyNotification).toHaveBeenCalled();
+        expect(mockedShowMatlabKernelIsBusyDialog).toHaveBeenCalled();
     });
 
     it('returns early if getFileNameForConversion returns null', async () => {
+        panel.sessionContext.session.kernel.status = 'idle';
         mockedGetFileNameForConversion.mockResolvedValue(null);
 
-        await exportHandler(commService, panel);
+        await exportHandler(commService, panel, targetURL);
 
         expect(mockedStartMatlab).not.toHaveBeenCalled();
         expect(mockedConvertToLiveCode).not.toHaveBeenCalled();
@@ -112,13 +124,21 @@ describe('exportHandler', () => {
     });
 
     it('handles MATLAB not licensed flow and closes window after user sign in', async () => {
+        panel.sessionContext.session.kernel.status = 'idle';
         const fakeWindow = { closed: false, close: jest.fn() } as unknown as Window;
 
-        mockedStartMatlab.mockResolvedValue({ isLicensed: false });
+        mockedStartMatlab.mockResolvedValue({
+            isMatlabLicensed: false,
+            matlabStatus: 'down',
+            matlabProxyHasError: false,
+            licensingMode: '',
+            matlabVersion: '',
+            matlabRootPath: ''
+        });
 
         mockedDisplayUserSigninNotification.mockResolvedValue({
             promise: Promise.resolve({})
-        } as PromiseDelegate<ReadonlyJSONValue>); // dummy promise which resolves to a PromiseDelegate.
+        } as PromiseDelegate<ReadonlyJSONValue>);
 
         mockedOpenMatlabButtonHandler.mockReturnValue(fakeWindow);
 
@@ -126,18 +146,26 @@ describe('exportHandler', () => {
         mockedWaitForMatlabToStart.mockResolvedValue(undefined);
         mockedWaitForUserToSignin.mockResolvedValue(undefined);
 
-        await exportHandler(commService, panel);
+        await exportHandler(commService, panel, targetURL);
 
-        expect(openMatlabButtonHandler).toHaveBeenCalled();
+        expect(openMatlabButtonHandler).toHaveBeenCalledWith(targetURL);
         expect(fakeWindow.close).toHaveBeenCalled();
     });
 
-    it('executes full conversion flow', async () => {
+    it('executes full conversion flow when MATLAB is licensed', async () => {
+        panel.sessionContext.session.kernel.status = 'idle';
         mockedGetFileNameForConversion.mockResolvedValue('file.mlx');
-        mockedStartMatlab.mockResolvedValue({ isLicensed: true });
+        mockedStartMatlab.mockResolvedValue({
+            isMatlabLicensed: true,
+            matlabStatus: 'up',
+            matlabProxyHasError: false,
+            licensingMode: 'online',
+            matlabVersion: 'R2024a',
+            matlabRootPath: '/usr/local/MATLAB'
+        });
         mockedWaitForMatlabToStart.mockResolvedValue(undefined);
 
-        await exportHandler(commService, panel);
+        await exportHandler(commService, panel, targetURL);
 
         expect(startMatlab).toHaveBeenCalled();
         expect(waitForMatlabToStart).toHaveBeenCalled();

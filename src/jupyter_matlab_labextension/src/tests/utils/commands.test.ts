@@ -1,3 +1,5 @@
+// Copyright 2025 The MathWorks, Inc.
+
 import {
     openMatlabButtonHandler,
     openAsLiveCodeInMatlabButtonHandler
@@ -6,16 +8,15 @@ import { Notification } from '@jupyterlab/apputils';
 
 import { getFileNameForConversion } from '../../utils/file';
 import {
-    getMatlabUrl,
     startMatlab,
     waitForMatlabToStart,
     convertToLiveCodeAndOpenMatlab,
     waitForUserToSignin
 } from '../../utils/matlab';
 import {
-    displayKernelBusyNotification,
     displayUserSigninNotification
 } from '../../utils/notifications';
+import { showMatlabKernelIsBusyDialog } from '../../utils/dialogs';
 
 // --------------------
 // Mocks
@@ -23,17 +24,14 @@ import {
 jest.mock('../../utils/file', () => ({
     getFileNameForConversion: jest.fn()
 }));
-// Typecast to a jest mocked function to be able to return custom values in tests
 const mockedGetFileNameForConversion = getFileNameForConversion as jest.MockedFunction<typeof getFileNameForConversion>;
 
 jest.mock('../../utils/matlab', () => ({
-    getMatlabUrl: jest.fn(),
     startMatlab: jest.fn(),
     waitForMatlabToStart: jest.fn(),
     convertToLiveCodeAndOpenMatlab: jest.fn(),
     waitForUserToSignin: jest.fn()
 }));
-const mockedGetMatlabUrl = getMatlabUrl as jest.MockedFunction<typeof getMatlabUrl>;
 const mockedStartMatlab = startMatlab as jest.MockedFunction<typeof startMatlab>;
 const mockedConvertToLiveCodeAndOpenMatlab = convertToLiveCodeAndOpenMatlab as jest.MockedFunction<typeof convertToLiveCodeAndOpenMatlab>;
 const mockedWaitForMatlabToStart = waitForMatlabToStart as jest.MockedFunction<typeof waitForMatlabToStart>;
@@ -46,19 +44,14 @@ jest.mock('@jupyterlab/apputils', () => ({
 }));
 
 jest.mock('../../utils/notifications', () => ({
-    displayKernelBusyNotification: jest.fn(),
     displayUserSigninNotification: jest.fn()
 }));
 const mockedDisplayUserSigninNotification = displayUserSigninNotification as jest.MockedFunction<typeof displayUserSigninNotification>;
-const mockedDisplayKernelBqusyNotification = displayKernelBusyNotification as jest.MockedFunction<typeof displayKernelBusyNotification>;
 
-// const mockedGetFileName = getFileNameForConversion as jest.MockedFunction<typeof getFileNameForConversion>;
-// const mockedStartMatlab = startMatlab as jest.MockedFunction<typeof startMatlab>;
-// const mockedConvertLC = convertToLiveCodeAndOpenMatlab as jest.MockedFunction<typeof convertToLiveCodeAndOpenMatlab>;
-// const mockedWaitForSignin = waitForUserToSignin as jest.MockedFunction<typeof waitForUserToSignin>;
-// const mockedWaitForMatlab = waitForMatlabToStart as jest.MockedFunction<typeof waitForMatlabToStart>;
-// const mockedDisplaySignin = displayUserSigninNotification as jest.MockedFunction<typeof displayUserSigninNotification>;
-// const mockedBusyNotification = displayKernelBusyNotification as jest.MockedFunction<typeof displayKernelBusyNotification>;
+jest.mock('../../utils/dialogs', () => ({
+    showMatlabKernelIsBusyDialog: jest.fn()
+}));
+const mockedShowMatlabKernelIsBusyDialog = showMatlabKernelIsBusyDialog as jest.MockedFunction<typeof showMatlabKernelIsBusyDialog>;
 
 // ------------------------------
 // Test Suite
@@ -66,6 +59,7 @@ const mockedDisplayKernelBqusyNotification = displayKernelBusyNotification as je
 describe('Commands module', () => {
     let panel: any;
     let commService: any;
+    const targetURL = 'http://localhost:8888/matlab/kernel-123/';
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -79,9 +73,12 @@ describe('Commands module', () => {
             id: 'notebook-123',
             context: { path: 'abc.ipynb' },
             sessionContext: {
+                isReady: true,
+                ready: Promise.resolve(),
                 kernelDisplayName: 'MATLAB Kernel',
                 session: {
                     kernel: {
+                        id: 'kernel-123',
                         status: 'idle'
                     }
                 }
@@ -93,30 +90,34 @@ describe('Commands module', () => {
         const mockWindowOpen = jest.fn();
         (global as any).window = { open: mockWindowOpen };
         mockWindowOpen.mockReturnValue({});
-        const matlabUrl = 'http://localhost:8888/matlab/default/';
-        mockedGetMatlabUrl.mockReturnValue(matlabUrl);
 
-        openMatlabButtonHandler();
+        openMatlabButtonHandler(targetURL);
 
         expect(mockWindowOpen).toHaveBeenCalledTimes(1);
-        expect(mockWindowOpen).toHaveBeenCalledWith(matlabUrl, '_blank');
+        expect(mockWindowOpen).toHaveBeenCalledWith(targetURL, '_blank');
     });
 
-    it('calls busy notification when NotebookInfo detects busy kernel', async () => {
-    // Overwrite kernel status so NotebookInfo reports busy
+    it('calls busy dialog when NotebookInfo detects busy kernel', async () => {
         panel.sessionContext.session.kernel.status = 'busy';
         mockedGetFileNameForConversion.mockResolvedValue('file.mlx');
-        mockedStartMatlab.mockResolvedValue({ isLicensed: true });
+        mockedStartMatlab.mockResolvedValue({
+            isMatlabLicensed: true,
+            matlabStatus: 'up',
+            matlabProxyHasError: false,
+            licensingMode: 'online',
+            matlabVersion: 'R2024a',
+            matlabRootPath: '/usr/local/MATLAB'
+        });
 
-        await openAsLiveCodeInMatlabButtonHandler(panel, commService);
+        await openAsLiveCodeInMatlabButtonHandler(panel, commService, targetURL);
 
-        expect(mockedDisplayKernelBqusyNotification).toHaveBeenCalled();
+        expect(mockedShowMatlabKernelIsBusyDialog).toHaveBeenCalled();
     });
 
     it('returns early when getFileNameForConversion returns null', async () => {
         mockedGetFileNameForConversion.mockResolvedValue(null);
 
-        await openAsLiveCodeInMatlabButtonHandler(panel, commService);
+        await openAsLiveCodeInMatlabButtonHandler(panel, commService, targetURL);
 
         expect(mockedStartMatlab).not.toHaveBeenCalled();
         expect(mockedConvertToLiveCodeAndOpenMatlab).not.toHaveBeenCalled();
@@ -126,7 +127,14 @@ describe('Commands module', () => {
     it('handles MATLAB not licensed: signin flow + window open + conversion', async () => {
         panel.sessionContext.session.kernel.status = 'idle';
         mockedGetFileNameForConversion.mockResolvedValue('file.mlx');
-        mockedStartMatlab.mockResolvedValue({ isLicensed: false });
+        mockedStartMatlab.mockResolvedValue({
+            isMatlabLicensed: false,
+            matlabStatus: 'down',
+            matlabProxyHasError: false,
+            licensingMode: '',
+            matlabVersion: '',
+            matlabRootPath: ''
+        });
         mockedDisplayUserSigninNotification.mockResolvedValue({} as any);
         mockedWaitForMatlabToStart.mockResolvedValue();
         mockedWaitForUserToSignin.mockResolvedValue();
@@ -134,10 +142,8 @@ describe('Commands module', () => {
         const mockWindowOpen = jest.fn();
         (global as any).window = { open: mockWindowOpen };
         mockWindowOpen.mockReturnValue({});
-        const matlabUrl = 'http://localhost:8888/matlab/default/';
-        mockedGetMatlabUrl.mockReturnValue(matlabUrl);
 
-        await openAsLiveCodeInMatlabButtonHandler(panel, commService);
+        await openAsLiveCodeInMatlabButtonHandler(panel, commService, targetURL);
 
         expect(mockedDisplayUserSigninNotification).toHaveBeenCalled();
         expect(mockedWaitForUserToSignin).toHaveBeenCalled();
@@ -148,16 +154,21 @@ describe('Commands module', () => {
     it('handles MATLAB licensed: waits + converts', async () => {
         panel.sessionContext.session.kernel.status = 'idle';
         mockedGetFileNameForConversion.mockResolvedValue('file.mlx');
-        mockedStartMatlab.mockResolvedValue({ isLicensed: true });
+        mockedStartMatlab.mockResolvedValue({
+            isMatlabLicensed: true,
+            matlabStatus: 'up',
+            matlabProxyHasError: false,
+            licensingMode: 'online',
+            matlabVersion: 'R2024a',
+            matlabRootPath: '/usr/local/MATLAB'
+        });
         mockedWaitForMatlabToStart.mockResolvedValue();
 
         const mockWindowOpen = jest.fn();
         (global as any).window = { open: mockWindowOpen };
         mockWindowOpen.mockReturnValue({});
-        const matlabUrl = 'http://localhost:8888/matlab/default/';
-        mockedGetMatlabUrl.mockReturnValue(matlabUrl);
 
-        await openAsLiveCodeInMatlabButtonHandler(panel, commService);
+        await openAsLiveCodeInMatlabButtonHandler(panel, commService, targetURL);
 
         expect(mockedDisplayUserSigninNotification).not.toHaveBeenCalled();
         expect(mockedWaitForUserToSignin).not.toHaveBeenCalled();

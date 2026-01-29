@@ -81,7 +81,7 @@ describe('getFileNameForConversion', () => {
         );
     });
 
-    it('returns null when user cancels instead of overwriting or renaming', async () => {
+    it('returns null when user cancels instead of replacing or renaming', async () => {
         mockedFileStatus.mockReturnValue(true);
         mockedShowDialog.mockResolvedValue({
             button: { label: 'Cancel', accept: false } as Dialog.IButton,
@@ -94,11 +94,11 @@ describe('getFileNameForConversion', () => {
         expect(result).toBeNull();
     });
 
-    it('returns default path when user chooses overwrite', async () => {
+    it('returns default path when user chooses Replace button', async () => {
         mockedFileStatus.mockReturnValue(true);
 
         mockedShowDialog.mockResolvedValue({
-            button: { label: 'Overwrite' } as Dialog.IButton,
+            button: { label: 'Replace' } as Dialog.IButton,
             value: null,
             isChecked: false
         } as Dialog.IResult<unknown>);

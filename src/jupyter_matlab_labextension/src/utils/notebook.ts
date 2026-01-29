@@ -13,7 +13,6 @@ export class NotebookInfo {
     private _notebookName: string | undefined = undefined;
     private _isMatlabNotebook: boolean = false;
     private _isBusy: boolean = false;
-    private _panel: NotebookPanel | null = null;
     private _targetURL: string | undefined = undefined;
 
     /*
@@ -55,34 +54,6 @@ export class NotebookInfo {
     }
 
     /*
-     * Waits until the associated kernel reaches the 'idle' status.
-     *
-     * @throws Error if no notebook panel has been set via update().
-     * @returns A promise that resolves when the kernel status becomes 'idle'.
-    */
-    async waitForIdleStatus (): Promise<void> {
-        if (!this._panel) {
-            throw Error('No notebook panel provided');
-        } else {
-            return new Promise((resolve) => {
-                const kernel = this._panel!.sessionContext.session?.kernel;
-                if (kernel?.status === 'idle') {
-                    resolve();
-                } else {
-                    const onStatusChanged = (connection: any, status: string) => {
-                        if (status === 'idle') {
-                            // Disconnect listener from statusChanged signal so that it doesn't get called again.
-                            connection.statusChanged.disconnect(onStatusChanged);
-                            resolve();
-                        }
-                    };
-                    kernel?.statusChanged.connect(onStatusChanged);
-                }
-            });
-        }
-    }
-
-    /*
      * Updates the tracked notebook panel and refreshes its derived state:
      * - whether it is a MATLAB notebook (via kernelspec metadata),
      * - whether the kernel is currently busy,
@@ -103,7 +74,6 @@ export class NotebookInfo {
             }
 
             // Update all properties based on the provided panel
-            this._panel = panel;
             this._isMatlabNotebook = panel.sessionContext.kernelDisplayName === 'MATLAB Kernel';
             const context = panel.context;
             this._isBusy = panel.sessionContext.session?.kernel?.status === 'busy';
@@ -114,18 +84,6 @@ export class NotebookInfo {
             this._notebookName = undefined;
             this._isMatlabNotebook = false;
             this._isBusy = false;
-            this._panel = null;
-        }
-    }
-
-    /*
-     * Sends an interrupt to the associated kernel, if available.
-     * No-op if there is no tracked panel/session/kernel.
-    */
-    interrupt (): void {
-        if (this._panel) {
-            this._panel.sessionContext.session?.kernel?.interrupt();
-            console.log('Kernel interupted');
         }
     }
 

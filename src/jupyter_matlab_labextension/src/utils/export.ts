@@ -1,6 +1,9 @@
+// Copyright 2026 The MathWorks, Inc.
+
 import { NotebookPanel } from '@jupyterlab/notebook';
 import { ICommunicationService } from '../plugins/matlabCommunication';
-import { displayKernelBusyNotification, displayUserSigninNotification } from './notifications';
+import { displayUserSigninNotification } from './notifications';
+import { showMatlabKernelIsBusyDialog } from './dialogs';
 import { openMatlabButtonHandler } from './commands';
 import { getFileNameForConversion } from '../utils/file';
 import { convertToLiveCode, startMatlab, waitForMatlabToStart, waitForUserToSignin } from '../utils/matlab';
@@ -21,7 +24,7 @@ export async function exportHandler (
     await notebookInfo.update(panel);
 
     if (notebookInfo.isBusy()) {
-        displayKernelBusyNotification();
+        showMatlabKernelIsBusyDialog();
         return;
     }
     const comm = await commService.getComm(panel.id);

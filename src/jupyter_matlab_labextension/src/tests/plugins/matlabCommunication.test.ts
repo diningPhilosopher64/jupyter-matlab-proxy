@@ -1,7 +1,7 @@
 // Copyright 2025 The MathWorks, Inc.
 
 // Mock dependencies from JupyterLab and other modules
-import { MatlabCommunicationExtension } from '../plugins/matlabCommunication';
+import { MatlabCommunicationExtension } from '../../plugins/matlabCommunication';
 import { NotebookPanel } from '@jupyterlab/notebook';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 
@@ -15,7 +15,7 @@ jest.mock('@jupyterlab/notebook', () => ({
     NotebookPanel: jest.fn()
 }));
 
-jest.mock('../utils/notebook', () => ({
+jest.mock('../../utils/notebook', () => ({
     NotebookInfo: jest.fn().mockImplementation(() => ({
         update: jest.fn(),
         isMatlabNotebook: jest.fn(() => true)
@@ -31,7 +31,7 @@ describe('MatlabCommunicationExtension', () => {
     beforeEach(() => {
         jest.clearAllMocks();
 
-        const notebookInfoMock = require('../utils/notebook').NotebookInfo;
+        const notebookInfoMock = require('../../utils/notebook').NotebookInfo;
         notebookInfoMock.mockImplementation(() => ({
             update: jest.fn(),
             isMatlabNotebook: jest.fn(() => true) // Reset to true for default behavior
@@ -86,7 +86,7 @@ describe('MatlabCommunicationExtension', () => {
     });
 
     it('should not create a communication channel for non-MATLAB notebooks', async () => {
-        const notebookInfoMock = require('../utils/notebook').NotebookInfo;
+        const notebookInfoMock = require('../../utils/notebook').NotebookInfo;
         notebookInfoMock.mockImplementation(() => ({
             update: jest.fn(),
             isMatlabNotebook: jest.fn(() => false)

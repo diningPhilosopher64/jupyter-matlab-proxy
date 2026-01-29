@@ -55,8 +55,8 @@ const mockWindowOpen = jest.fn();
 (global as any).window = { open: mockWindowOpen };
 
 const mockedGetBaseUrl = PageConfig.getBaseUrl as jest.MockedFunction<typeof PageConfig.getBaseUrl>;
-const mockedCreateAction = ActionFactory.createAction as jest.MockedFunction<typeof ActionFactory.createAction>;
-const mockedMatlabStatusGet = MatlabStatusAction.getStatus as jest.MockedFunction<typeof MatlabStatusAction.getStatus>;
+const mockedCreateAction = ActionFactory.createAction as jest.Mock;
+const mockedMatlabStatusGet = MatlabStatusAction.getStatus as jest.Mock;
 const mockedConvertGetPath = ConvertAction.getGeneratedLiveCodeFilePath as jest.MockedFunction<typeof ConvertAction.getGeneratedLiveCodeFilePath>;
 const mockedDisplayOpenMatlab = displayOpenMatlabNotification as jest.MockedFunction<typeof displayOpenMatlabNotification>;
 const mockedDisplayStarting = displayStartingMatlabNotification as jest.MockedFunction<typeof displayStartingMatlabNotification>;
@@ -115,12 +115,22 @@ describe('matlab utils', () => {
     // =========================================================
     it('startMatlab sends START_MATLAB_PROXY and then gets status', async () => {
         const startAction = { execute: jest.fn().mockResolvedValue(undefined) };
-        mockedCreateAction.mockReturnValue(startAction);
+        const statusAction = { execute: jest.fn().mockResolvedValue(undefined) };
 
-        const status = { matlab: { status: 'up' } };
-        const getStatusSpy = jest
-            .spyOn(matlabModule, 'getMatlabProxyStatus')
-            .mockResolvedValue(status as any);
+        // First call returns startAction, second call returns statusAction (for getMatlabProxyStatus)
+        mockedCreateAction
+            .mockReturnValueOnce(startAction)
+            .mockReturnValueOnce(statusAction);
+
+        const fakeStatus = {
+            isMatlabLicensed: true,
+            matlabStatus: 'up',
+            matlabProxyHasError: false,
+            licensingMode: 'online',
+            matlabVersion: 'R2024a',
+            matlabRootPath: '/usr/local/MATLAB'
+        };
+        mockedMatlabStatusGet.mockReturnValue(fakeStatus);
 
         const result = await startMatlab(panel, comm);
 
@@ -130,8 +140,7 @@ describe('matlab utils', () => {
             panel
         );
         expect(startAction.execute).toHaveBeenCalledWith(null, comm);
-        expect(getStatusSpy).toHaveBeenCalledWith(panel, comm);
-        expect(result).toBe(status);
+        expect(result).toEqual(fakeStatus);
     });
 
     // =========================================================
@@ -141,10 +150,10 @@ describe('matlab utils', () => {
         const statusAction = { execute: jest.fn().mockResolvedValue(undefined) };
         mockedCreateAction.mockReturnValue(statusAction);
 
-        // First call: not up, Second call: up
+        // First call: not up, Second call: up (using matlabStatus not matlab.status)
         mockedMatlabStatusGet
-            .mockReturnValueOnce({ matlab: { status: 'starting' } } as any)
-            .mockReturnValueOnce({ matlab: { status: 'up' } } as any);
+            .mockReturnValueOnce({ matlabStatus: 'starting' } as any)
+            .mockReturnValueOnce({ matlabStatus: 'up' } as any);
 
         const notificationDelegate = {
             resolve: jest.fn(),
@@ -165,7 +174,7 @@ describe('matlab utils', () => {
         mockedCreateAction.mockReturnValue(statusAction);
 
         // MATLAB never up
-        mockedMatlabStatusGet.mockReturnValue({ matlab: { status: 'starting' } } as any);
+        mockedMatlabStatusGet.mockReturnValue({ matlabStatus: 'starting' } as any);
 
         const notificationDelegate = {
             resolve: jest.fn(),
@@ -242,33 +251,31 @@ describe('matlab utils', () => {
         });
 
         it('opens MATLAB and editor when generated file path is returned and shouldOpenMatlab=true', async () => {
-            // Make convertToLiveCode return a generated path
-            const convertSpy = jest
-                .spyOn(matlabModule, 'convertToLiveCode')
-                .mockResolvedValue('/home/user/notebook.mlx');
+            // Mock the CONVERT action for convertToLiveCode
+            const convertAction = { execute: jest.fn().mockResolvedValue(undefined) };
+            // Mock the EDIT action for openGeneratedFileInEditor
+            const editAction = { execute: jest.fn().mockResolvedValue(undefined) };
 
-            const openEditorSpy = jest
-                .spyOn(matlabModule, 'openGeneratedFileInEditor')
-                .mockResolvedValue(undefined as any);
+            mockedCreateAction
+                .mockReturnValueOnce(convertAction)
+                .mockReturnValueOnce(editAction);
 
-            await convertToLiveCodeAndOpenMatlab(
+            mockedConvertGetPath.mockReturnValue('/home/user/notebook.mlx');
+
+            const promise = convertToLiveCodeAndOpenMatlab(
                 panel,
                 comm,
                 '/home/user/notebook.mlx',
                 true
             );
 
-            expect(convertSpy).toHaveBeenCalled();
-            expect(mockedDisplayOpenMatlab).toHaveBeenCalled();
-            expect(openEditorSpy).toHaveBeenCalledWith(
-                panel,
-                comm,
-                '/home/user/notebook.mlx'
-            );
+            // Run all pending timers and promises
+            await jest.runAllTimersAsync();
+            await promise;
 
-            // MATLAB tab opened after timeout
-            expect(mockWindowOpen).not.toHaveBeenCalled();
-            jest.runAllTimers();
+            expect(mockedCreateAction).toHaveBeenCalledWith(ActionTypes.CONVERT, true, panel);
+            expect(mockedDisplayOpenMatlab).toHaveBeenCalled();
+            expect(editAction.execute).toHaveBeenCalled();
             expect(mockWindowOpen).toHaveBeenCalledWith(
                 'http://localhost:8888/matlab/default/index.html',
                 '_blank'
@@ -276,13 +283,14 @@ describe('matlab utils', () => {
         });
 
         it('does not open MATLAB when shouldOpenMatlab=false', async () => {
-            const convertSpy = jest
-                .spyOn(matlabModule, 'convertToLiveCode')
-                .mockResolvedValue('/home/user/notebook.mlx');
+            const convertAction = { execute: jest.fn().mockResolvedValue(undefined) };
+            const editAction = { execute: jest.fn().mockResolvedValue(undefined) };
 
-            const openEditorSpy = jest
-                .spyOn(matlabModule, 'openGeneratedFileInEditor')
-                .mockResolvedValue(undefined as any);
+            mockedCreateAction
+                .mockReturnValueOnce(convertAction)
+                .mockReturnValueOnce(editAction);
+
+            mockedConvertGetPath.mockReturnValue('/home/user/notebook.mlx');
 
             await convertToLiveCodeAndOpenMatlab(
                 panel,
@@ -291,20 +299,18 @@ describe('matlab utils', () => {
                 false
             );
 
-            expect(convertSpy).toHaveBeenCalled();
+            expect(convertAction.execute).toHaveBeenCalled();
             expect(mockedDisplayOpenMatlab).not.toHaveBeenCalled();
             jest.runAllTimers();
             expect(mockWindowOpen).not.toHaveBeenCalled();
-            expect(openEditorSpy).toHaveBeenCalledWith(
-                panel,
-                comm,
-                '/home/user/notebook.mlx'
-            );
+            expect(editAction.execute).toHaveBeenCalled();
         });
 
         it('does nothing when convertToLiveCode returns falsy', async () => {
-            jest.spyOn(matlabModule, 'convertToLiveCode').mockResolvedValue('' as any);
+            const convertAction = { execute: jest.fn().mockResolvedValue(undefined) };
 
+            mockedCreateAction.mockReturnValueOnce(convertAction);
+            mockedConvertGetPath.mockReturnValue('');
             const openEditorSpy = jest
                 .spyOn(matlabModule, 'openGeneratedFileInEditor')
                 .mockResolvedValue(undefined as any);
@@ -316,6 +322,7 @@ describe('matlab utils', () => {
                 true
             );
 
+            expect(convertAction.execute).toHaveBeenCalled();
             expect(mockedDisplayOpenMatlab).not.toHaveBeenCalled();
             jest.runAllTimers();
             expect(mockWindowOpen).not.toHaveBeenCalled();
@@ -326,13 +333,13 @@ describe('matlab utils', () => {
     // =========================================================
     // waitForUserToSignin
     // =========================================================
-    it('waitForUserToSignin resolves when isLicensed becomes true', async () => {
+    it('waitForUserToSignin resolves when isMatlabLicensed becomes true', async () => {
         const statusAction = { execute: jest.fn().mockResolvedValue(undefined) };
         mockedCreateAction.mockReturnValue(statusAction);
 
         mockedMatlabStatusGet
-            .mockReturnValueOnce({ isLicensed: false } as any)
-            .mockReturnValueOnce({ isLicensed: true } as any);
+            .mockReturnValueOnce({ isMatlabLicensed: false } as any)
+            .mockReturnValueOnce({ isMatlabLicensed: true } as any);
 
         const delegate: any = {
             resolve: jest.fn(),
@@ -350,7 +357,7 @@ describe('matlab utils', () => {
         const statusAction = { execute: jest.fn().mockResolvedValue(undefined) };
         mockedCreateAction.mockReturnValue(statusAction);
 
-        mockedMatlabStatusGet.mockReturnValue({ isLicensed: false } as any);
+        mockedMatlabStatusGet.mockReturnValue({ isMatlabLicensed: false } as any);
 
         const delegate: any = {
             resolve: jest.fn(),
