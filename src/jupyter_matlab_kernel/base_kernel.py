@@ -1,4 +1,4 @@
-# Copyright 2023-2025 The MathWorks, Inc.
+# Copyright 2023-2026 The MathWorks, Inc.
 
 """
 This module serves as the base class for various MATLAB Kernels.

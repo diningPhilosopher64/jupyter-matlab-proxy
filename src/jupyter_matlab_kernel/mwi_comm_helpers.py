@@ -1,4 +1,4 @@
-# Copyright 2023-2025 The MathWorks, Inc.
+# Copyright 2023-2026 The MathWorks, Inc.
 # Helper functions to communicate with matlab-proxy and MATLAB
 
 import http

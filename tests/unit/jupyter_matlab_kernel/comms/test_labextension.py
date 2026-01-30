@@ -1,4 +1,4 @@
-# Copyright 2025 The MathWorks, Inc.
+# Copyright 2025-2026 The MathWorks, Inc.
 
 import pytest
 from jupyter_matlab_kernel.comms.labextension import (

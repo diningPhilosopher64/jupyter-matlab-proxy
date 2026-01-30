@@ -1,4 +1,4 @@
-# Copyright 2020-2023 The MathWorks, Inc.
+# Copyright 2020-2026 The MathWorks, Inc.
 
 """Force Pytest to included untested files in coverage calculations.
 

@@ -1,4 +1,4 @@
-% Copyright 2025 The MathWorks, Inc.
+% Copyright 2026 The MathWorks, Inc.
 %-------------------------------------------------------------------
 %
 % mlx2ipynb should be used when working in Juypter.

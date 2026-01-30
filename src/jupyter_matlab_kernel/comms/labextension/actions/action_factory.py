@@ -1,4 +1,4 @@
-# Copyright 2025 The MathWorks, Inc.
+# Copyright 2026 The MathWorks, Inc.
 
 from typing import Union
 from jupyter_matlab_kernel.comms.labextension.actions import (

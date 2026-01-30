@@ -109,6 +109,9 @@ ensured-targets = [
     "src/jupyter_matlab_labextension/jupyter_matlab_labextension/labextension/static/style.js",
     "src/jupyter_matlab_labextension/jupyter_matlab_labextension/labextension/package.json",
 ]
+skip-if-exists = [
+    "src/jupyter_matlab_labextension/jupyter_matlab_labextension/labextension/static/style.js",
+]
 
 
 [tool.hatch.build.hooks.jupyter-builder.build-kwargs]
