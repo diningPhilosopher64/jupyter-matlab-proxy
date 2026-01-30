@@ -276,5 +276,7 @@ async def test_comm_msg_extracts_data_correctly(
     await labext_comm.comm_msg(mock_stream, mock_ident, msg)
 
     # Assert
-    expected_log = f"Received action_type:{action_type} with data:{data} from the lab extension"
+    expected_log = (
+        f"Received action_type:{action_type} with data:{data} from the lab extension"
+    )
     labext_comm.log.debug.assert_any_call(expected_log)

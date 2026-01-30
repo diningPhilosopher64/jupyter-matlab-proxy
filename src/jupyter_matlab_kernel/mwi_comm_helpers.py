@@ -84,8 +84,6 @@ class MWICommHelper:
         self._control_loop = control_loop
         self.headers = headers
         self.logger = logger
-        # self._http_shell_client = None
-        # self._http_control_client = None
 
     def _create_client_session(self):
         """Create a new client session with standard configuration"""
@@ -96,34 +94,6 @@ class MWICommHelper:
             trust_env=True,
             timeout=timeout,
         )
-
-    # async def _get_shell_client(self):
-    #     """Get or create the shell HTTP client in the current event loop context"""
-    #     if self._http_shell_client is None or self._http_shell_client.closed:
-    #         timeout = aiohttp.ClientTimeout(total=None)
-    #         self._http_shell_client = aiohttp.ClientSession(
-    #             connector=aiohttp.TCPConnector(ssl=False),
-    #             headers=self.headers,
-    #             trust_env=True,
-    #             timeout=timeout,
-    #         )
-    #     return self._http_shell_client
-
-    # async def _get_control_client(self):
-    #     """Get or create the control HTTP client in the current event loop context"""
-    #     if self._http_control_client is None or self._http_control_client.closed:
-    #         timeout = aiohttp.ClientTimeout(total=None)
-    #         self._http_control_client = aiohttp.ClientSession(
-    #             connector=aiohttp.TCPConnector(ssl=False),
-    #             headers=self.headers,
-    #             trust_env=True,
-    #             timeout=timeout,
-    #         )
-    #     return self._http_control_client
-
-    async def connect(self):
-        """Initializes the HTTP clients"""
-        pass
 
     async def fetch_matlab_root_path(self) -> Optional[str]:
         """
