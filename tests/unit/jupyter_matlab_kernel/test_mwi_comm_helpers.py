@@ -29,9 +29,7 @@ async def comm_helper_fixture():
     kernel_id = ""
     loop = asyncio.get_event_loop()
     matlab_proxy = MWICommHelper(kernel_id, url, loop, loop, headers)
-    await matlab_proxy.connect()
     yield matlab_proxy
-    await matlab_proxy.disconnect()
 
 
 # Testing fetch_matlab_proxy_status
