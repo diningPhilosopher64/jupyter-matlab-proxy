@@ -31,19 +31,26 @@ def check_file_exists_action(mock_kernel):
 
 def test_init_sets_kernel_and_log(mock_kernel):
     """Test that initialization sets kernel and log attributes."""
+    # Act
     action = CheckFileExistsAction(mock_kernel)
+
+    # Assert
     assert action.kernel is mock_kernel
     assert action.log is mock_kernel.log
 
 
 def test_get_code_returns_none(check_file_exists_action):
     """Test that get_code returns None."""
+    # Act
     result = check_file_exists_action.get_code()
+
+    # Assert
     assert result is None
 
 
 def test_validate_data(check_file_exists_action):
     """Test validate_data raises for invalid data and succeeds for valid data."""
+    # Act & Assert
     with pytest.raises(ValueError) as exc_info:
         check_file_exists_action.validate_data({})
     assert "'liveCodeFilePath' is required" in str(exc_info.value)
@@ -67,8 +74,10 @@ async def test_execute_sends_error_for_invalid_path(
     check_file_exists_action, mock_comm, data
 ):
     """Test that execute sends error response for invalid liveCodeFilePath."""
+    # Act
     await check_file_exists_action.execute(mock_comm, data)
 
+    # Assert
     mock_comm.send.assert_called_once()
     call_args = mock_comm.send.call_args[0][0]
     assert call_args["action"] == ActionTypes.CHECK_FILE_EXISTS.value
@@ -88,14 +97,17 @@ async def test_execute_returns_file_exists_status(
     check_file_exists_action, mock_comm, tmp_path, file_exists, expected_exists
 ):
     """Test that execute returns correct exists status and logs debug message."""
+    # Arrange
     test_file = tmp_path / "test_file.m"
     if file_exists:
         test_file.write_text("% test content")
 
     data = {"liveCodeFilePath": str(test_file)}
 
+    # Act
     await check_file_exists_action.execute(mock_comm, data)
 
+    # Assert
     mock_comm.send.assert_called_once()
     call_args = mock_comm.send.call_args[0][0]
     assert call_args["action"] == ActionTypes.CHECK_FILE_EXISTS.value
@@ -109,6 +121,7 @@ async def test_execute_handles_tilde_expansion(
     check_file_exists_action, mock_comm, mocker
 ):
     """Test that execute properly expands ~ in file paths."""
+    # Arrange
     mock_path = mocker.MagicMock(spec=Path)
     mock_expanded = mocker.MagicMock()
     mock_resolved = mocker.MagicMock()
@@ -123,8 +136,10 @@ async def test_execute_handles_tilde_expansion(
 
     data = {"liveCodeFilePath": "~/test_file.m"}
 
+    # Act
     await check_file_exists_action.execute(mock_comm, data)
 
+    # Assert
     mock_path.expanduser.assert_called_once()
     mock_expanded.resolve.assert_called_once()
     mock_resolved.exists.assert_called_once()
@@ -135,10 +150,13 @@ async def test_execute_logs_error_on_validation_failure(
     check_file_exists_action, mock_comm
 ):
     """Test that execute logs error when validation fails."""
+    # Arrange
     data = {}
 
+    # Act
     await check_file_exists_action.execute(mock_comm, data)
 
+    # Assert
     check_file_exists_action.log.error.assert_called_once()
     error_message = check_file_exists_action.log.error.call_args[0][0]
     assert "CheckFileExists action failed" in error_message

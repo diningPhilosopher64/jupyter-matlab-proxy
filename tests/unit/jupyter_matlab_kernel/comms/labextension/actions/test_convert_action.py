@@ -29,22 +29,31 @@ def convert_action(mock_kernel):
 
 def test_init_sets_kernel_and_log(mock_kernel):
     """Test that initialization sets kernel and log attributes."""
+    # Act
     action = ConvertAction(mock_kernel)
+
+    # Assert
     assert action.kernel is mock_kernel
     assert action.log is mock_kernel.log
 
 
 def test_get_code_returns_ipynb2mlx_command(convert_action):
     """Test that get_code returns correct MATLAB command."""
+    # Act
     result = convert_action.get_code("/path/to/file.ipynb", "/path/to/file.mlx")
+
+    # Assert
     assert result == 'ipynb2mlx("/path/to/file.ipynb","/path/to/file.mlx")'
 
 
 def test_get_code_mlx_to_m_conversion(convert_action):
     """Test that _get_code_mlx_to_m_conversion returns correct MATLAB command."""
+    # Act
     result = convert_action._get_code_mlx_to_m_conversion(
         "/path/to/file.mlx", "/path/to/file.m"
     )
+
+    # Assert
     assert "matlab.desktop.editor.openDocument" in result
     assert "/path/to/file.mlx" in result
     assert "/path/to/file.m" in result
@@ -67,11 +76,13 @@ def test_get_code_mlx_to_m_conversion(convert_action):
 )
 def test_is_matlab_version_25a_or_later(convert_action, version, expected):
     """Test MATLAB version checking for 25a or later."""
+    # Act & Assert
     assert convert_action._is_matlab_version_25a_or_later(version) == expected
 
 
 def test_validate_data(convert_action):
     """Test validate_data raises for invalid data and succeeds for valid data."""
+    # Act & Assert
     with pytest.raises(ValueError) as exc_info:
         convert_action.validate_data({})
     assert "ipynbFilePath" in str(exc_info.value)
@@ -95,8 +106,10 @@ def test_validate_data(convert_action):
 @pytest.mark.asyncio
 async def test_execute_sends_error_on_validation_failure(convert_action, mock_comm):
     """Test that execute sends error response when validation fails."""
+    # Act
     await convert_action.execute(mock_comm, {})
 
+    # Assert
     mock_comm.send.assert_called_once()
     call_args = mock_comm.send.call_args[0][0]
     assert call_args["action"] == ActionTypes.CONVERT.value
@@ -108,6 +121,7 @@ async def test_execute_sends_error_on_validation_failure(convert_action, mock_co
 @pytest.mark.asyncio
 async def test_execute_converts_successfully_pre_25a(convert_action, mock_comm, mocker):
     """Test successful conversion for MATLAB versions before 25a."""
+    # Arrange
     mock_status = mocker.MagicMock()
     mock_status.matlab_version = "R2024b"
     convert_action.kernel.mwi_comm_helper.fetch_matlab_proxy_status = mocker.AsyncMock(
@@ -119,8 +133,10 @@ async def test_execute_converts_successfully_pre_25a(convert_action, mock_comm, 
 
     data = {"ipynbFilePath": "~/notebook.ipynb", "liveCodeFilePath": "notebook.mlx"}
 
+    # Act
     await convert_action.execute(mock_comm, data)
 
+    # Assert
     mock_comm.send.assert_called_once()
     call_args = mock_comm.send.call_args[0][0]
     assert call_args["action"] == ActionTypes.CONVERT.value
@@ -133,6 +149,7 @@ async def test_execute_converts_successfully_25a_or_later(
     convert_action, mock_comm, mocker
 ):
     """Test successful conversion for MATLAB 25a or later with mlx to m conversion."""
+    # Arrange
     mock_status = mocker.MagicMock()
     mock_status.matlab_version = "R2025a"
     convert_action.kernel.mwi_comm_helper.fetch_matlab_proxy_status = mocker.AsyncMock(
@@ -144,8 +161,10 @@ async def test_execute_converts_successfully_25a_or_later(
 
     data = {"ipynbFilePath": "~/notebook.ipynb", "liveCodeFilePath": "notebook.mlx"}
 
+    # Act
     await convert_action.execute(mock_comm, data)
 
+    # Assert
     mock_comm.send.assert_called_once()
     call_args = mock_comm.send.call_args[0][0]
     assert call_args["action"] == ActionTypes.CONVERT.value
@@ -156,6 +175,7 @@ async def test_execute_converts_successfully_25a_or_later(
 @pytest.mark.asyncio
 async def test_execute_sends_error_on_eval_failure(convert_action, mock_comm, mocker):
     """Test that execute sends error when MATLAB eval fails."""
+    # Arrange
     convert_action.kernel.mwi_comm_helper.send_eval_request_to_matlab = (
         mocker.AsyncMock(
             side_effect=[
@@ -171,8 +191,10 @@ async def test_execute_sends_error_on_eval_failure(convert_action, mock_comm, mo
 
     data = {"ipynbFilePath": "~/notebook.ipynb", "liveCodeFilePath": "notebook.mlx"}
 
+    # Act
     await convert_action.execute(mock_comm, data)
 
+    # Assert
     mock_comm.send.assert_called_once()
     call_args = mock_comm.send.call_args[0][0]
     assert call_args["action"] == ActionTypes.CONVERT.value
@@ -183,6 +205,7 @@ async def test_execute_sends_error_on_eval_failure(convert_action, mock_comm, mo
 @pytest.mark.asyncio
 async def test_execute_sends_error_on_exception(convert_action, mock_comm, mocker):
     """Test that execute sends error response when exception occurs."""
+    # Arrange
     error_message = "Connection failed"
     convert_action.kernel.mwi_comm_helper.send_eval_request_to_matlab = (
         mocker.AsyncMock(side_effect=Exception(error_message))
@@ -190,8 +213,10 @@ async def test_execute_sends_error_on_exception(convert_action, mock_comm, mocke
 
     data = {"ipynbFilePath": "~/notebook.ipynb", "liveCodeFilePath": "notebook.mlx"}
 
+    # Act
     await convert_action.execute(mock_comm, data)
 
+    # Assert
     mock_comm.send.assert_called_once()
     call_args = mock_comm.send.call_args[0][0]
     assert call_args["action"] == ActionTypes.CONVERT.value
