@@ -5,6 +5,7 @@ import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 import { BaseAction } from './baseAction';
 import { ActionTypes } from './actionTypes';
 import { ICommunicationChannel } from '../matlabCommunication';
+import { isCommValid } from './actionUtils';
 
 export class EditAction extends BaseAction {
     blocking: boolean;
@@ -65,7 +66,7 @@ export class EditAction extends BaseAction {
         filePath: string,
         comm: ICommunicationChannel
     ): boolean {
-        if (!comm || comm.isDisposed) {
+        if (!isCommValid(comm)) {
             console.error('Communication channel is not available');
             return false;
         }

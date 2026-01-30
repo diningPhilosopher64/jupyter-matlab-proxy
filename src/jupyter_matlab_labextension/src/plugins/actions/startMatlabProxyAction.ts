@@ -5,6 +5,7 @@ import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 import { ICommunicationChannel } from '../matlabCommunication';
 import { BaseAction } from './baseAction';
 import { ActionTypes } from './actionTypes';
+import { isCommValid } from './actionUtils';
 
 export class StartMatlabProxyAction extends BaseAction {
     blocking: boolean;
@@ -54,7 +55,7 @@ export class StartMatlabProxyAction extends BaseAction {
     }
 
     private sendStartMatlabRequest (comm: ICommunicationChannel): void {
-        if (!comm || comm.isDisposed) {
+        if (!isCommValid(comm)) {
             console.error('Communication channel is not available');
             return;
         }

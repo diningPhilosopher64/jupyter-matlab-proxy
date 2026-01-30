@@ -5,6 +5,7 @@ import { ICommunicationChannel } from '../matlabCommunication';
 import { BaseAction } from './baseAction';
 import { ActionTypes } from './actionTypes';
 import { displayConversionNotification } from '../../utils/notifications';
+import { isCommValid } from './actionUtils';
 
 export class ConvertAction extends BaseAction {
     blocking: boolean;
@@ -25,6 +26,11 @@ export class ConvertAction extends BaseAction {
     }
 
     public async execute (data: any, comm: ICommunicationChannel): Promise<void> {
+        if (!isCommValid(comm)) {
+            console.error('Communication channel is not available');
+            return;
+        }
+
         const timeout = 50000;
 
         ConvertAction.blockingPromise = displayConversionNotification(
@@ -82,29 +88,4 @@ export class ConvertAction extends BaseAction {
 
         console.debug('ConvertAction onMsg completed');
     }
-
-    // private sendConvertRequest (
-    //     ipynbFilePath: string,
-    //     liveCodeFilePath: string,
-    //     comm: ICommunicationChannel
-    // ): boolean {
-    //     if (!comm || comm.isDisposed) {
-    //         console.error('Communication channel is not available');
-    //         return false;
-    //     }
-
-    //     if (!ipynbFilePath) {
-    //         console.error('File path is not available');
-    //         return false;
-    //     }
-
-    //     comm.send({
-    //         action: 'convert',
-    //         data: {
-    //             ipynbFilePath,
-    //             mlxFilePath: liveCodeFilePath
-    //         }
-    //     });
-    //     return true;
-    // }
 }

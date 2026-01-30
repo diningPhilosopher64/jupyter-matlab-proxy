@@ -176,11 +176,6 @@ export function sendConvertRequest (
     data: any,
     comm: ICommunicationChannel
 ): boolean {
-    if (!comm || comm.isDisposed) {
-        console.error('Communication channel is not available');
-        return false;
-    }
-
     comm.send({
         action: ActionTypes.CONVERT,
         data

@@ -372,19 +372,6 @@ describe('matlab utils', () => {
     // =========================================================
     // sendConvertRequest
     // =========================================================
-    it('sendConvertRequest returns false and logs error when comm is invalid', () => {
-        const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-
-        const result1 = sendConvertRequest({ foo: 'bar' }, null as any);
-        const result2 = sendConvertRequest({ foo: 'bar' }, { isDisposed: true } as any);
-
-        expect(result1).toBe(false);
-        expect(result2).toBe(false);
-        expect(errorSpy).toHaveBeenCalled();
-
-        errorSpy.mockRestore();
-    });
-
     it('sendConvertRequest sends action and returns true when comm is valid', () => {
         const send = jest.fn();
         const commObj = { isDisposed: false, send };

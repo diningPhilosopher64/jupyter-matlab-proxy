@@ -5,6 +5,7 @@ import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 import { ICommunicationChannel } from '../matlabCommunication';
 import { BaseAction } from './baseAction';
 import { ActionTypes } from './actionTypes';
+import { isCommValid } from './actionUtils';
 
 export class CheckFileExistsAction extends BaseAction {
     blocking: boolean;
@@ -74,7 +75,7 @@ export class CheckFileExistsAction extends BaseAction {
         filePath: string,
         comm: ICommunicationChannel
     ): boolean {
-        if (!comm || comm.isDisposed) {
+        if (!isCommValid(comm)) {
             console.error('Communication channel is not available');
             return false;
         }

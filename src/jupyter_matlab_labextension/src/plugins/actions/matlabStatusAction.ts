@@ -5,6 +5,7 @@ import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 import { ICommunicationChannel } from '../matlabCommunication';
 import { BaseAction } from './baseAction';
 import { ActionTypes } from './actionTypes';
+import { isCommValid } from './actionUtils';
 
 export type MATLABStatus = {
   isMatlabLicensed: boolean;
@@ -65,7 +66,7 @@ export class MatlabStatusAction extends BaseAction {
     }
 
     private fetchMatlabStatus (comm: ICommunicationChannel): any {
-        if (!comm || comm.isDisposed) {
+        if (!isCommValid(comm)) {
             console.error('Communication channel is not available');
             return false;
         }
