@@ -25,9 +25,14 @@ class EditAction(ActionCommand):
 
     def __check_if_rootapp_instance_is_set(self, string):
         match = re.search(r"^\s*State:\s*(\S+)", string, re.MULTILINE)
+        self.log.info(match)
+        self.log.info(string)
         if match:
             state = match.group(1)
             return state == "RUNNING"
+
+        else:
+            raise Exception("Failed to parse response string from MATLAB")
 
     async def __wait_for_rootapp_instance_to_be_set(self):
         getinstance_code = "matlab.ui.container.internal.RootApp.getInstance()"
