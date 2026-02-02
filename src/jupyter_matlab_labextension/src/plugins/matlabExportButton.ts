@@ -1,3 +1,5 @@
+// Copyright 2026 The MathWorks, Inc.
+
 import {
     JupyterFrontEnd,
     JupyterFrontEndPlugin

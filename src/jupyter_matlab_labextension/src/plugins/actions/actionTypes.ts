@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2026 The MathWorks, Inc.
 
 /* eslint-disable no-unused-vars */
 export enum ActionTypes {

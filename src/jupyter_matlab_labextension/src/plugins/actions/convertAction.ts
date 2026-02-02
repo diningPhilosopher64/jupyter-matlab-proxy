@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2026 The MathWorks, Inc.
 
 import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 import { ICommunicationChannel } from '../matlabCommunication';
