@@ -109,7 +109,7 @@ describe('Commands module', () => {
             matlabRootPath: '/usr/local/MATLAB'
         });
 
-        await openAsLiveCodeInMatlabButtonHandler(panel, commService, targetURL);
+        await openAsLiveCodeInMatlabButtonHandler(panel, commService);
 
         expect(mockedShowMatlabKernelIsBusyDialog).toHaveBeenCalled();
     });
@@ -117,7 +117,7 @@ describe('Commands module', () => {
     it('returns early when getFileNameForConversion returns null', async () => {
         mockedGetFileNameForConversion.mockResolvedValue(null);
 
-        await openAsLiveCodeInMatlabButtonHandler(panel, commService, targetURL);
+        await openAsLiveCodeInMatlabButtonHandler(panel, commService);
 
         expect(mockedStartMatlab).not.toHaveBeenCalled();
         expect(mockedConvertToLiveCodeAndOpenMatlab).not.toHaveBeenCalled();
@@ -143,7 +143,7 @@ describe('Commands module', () => {
         (global as any).window = { open: mockWindowOpen };
         mockWindowOpen.mockReturnValue({});
 
-        await openAsLiveCodeInMatlabButtonHandler(panel, commService, targetURL);
+        await openAsLiveCodeInMatlabButtonHandler(panel, commService);
 
         expect(mockedDisplayUserSigninNotification).toHaveBeenCalled();
         expect(mockedWaitForUserToSignin).toHaveBeenCalled();
@@ -168,7 +168,7 @@ describe('Commands module', () => {
         (global as any).window = { open: mockWindowOpen };
         mockWindowOpen.mockReturnValue({});
 
-        await openAsLiveCodeInMatlabButtonHandler(panel, commService, targetURL);
+        await openAsLiveCodeInMatlabButtonHandler(panel, commService);
 
         expect(mockedDisplayUserSigninNotification).not.toHaveBeenCalled();
         expect(mockedWaitForUserToSignin).not.toHaveBeenCalled();

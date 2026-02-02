@@ -1,6 +1,5 @@
 // Copyright 2025 The MathWorks, Inc.
 
-import { PageConfig } from '@jupyterlab/coreutils';
 import { ICommunicationChannel } from '../plugins/matlabCommunication';
 import { NotebookPanel } from '@jupyterlab/notebook';
 import { ActionFactory } from '../plugins/actions/actionFactory';
@@ -10,12 +9,7 @@ import { MATLABStatus, MatlabStatusAction } from '../plugins/actions/matlabStatu
 import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 import { displayOpenMatlabNotification, displayStartingMatlabNotification } from './notifications';
 import { ConvertAction } from '../plugins/actions/convertAction';
-
-export function getMatlabUrl (): string {
-    const baseUrl = PageConfig.getBaseUrl();
-    // TODO for Krishan: Add logic to use Kernel IDs in the url for Isolated MATLAB Kernel usecase
-    return baseUrl + 'matlab/default/index.html';
-}
+import { NotebookInfo } from './notebook';
 
 export async function getMatlabProxyStatus (panel: NotebookPanel, comm: ICommunicationChannel): Promise<MATLABStatus> {
     const matlabStatusAction = ActionFactory.createAction(
@@ -81,23 +75,25 @@ export async function waitForMatlabToStart (
 }
 
 export async function convertToLiveCodeAndOpenMatlab (
-    notebook: NotebookPanel,
+    panel: NotebookPanel,
     comm: ICommunicationChannel,
     liveCodeFilePath: string,
     shouldOpenMatlab: boolean = true
 ): Promise<void> {
-    const generatedLiveCodeFilePath = await convertToLiveCode(notebook, comm, liveCodeFilePath);
+    const generatedLiveCodeFilePath = await convertToLiveCode(panel, comm, liveCodeFilePath);
+    const notebookInfo = new NotebookInfo();
+    await notebookInfo.update(panel);
 
     if (generatedLiveCodeFilePath) {
         if (shouldOpenMatlab) {
             displayOpenMatlabNotification();
             // Open MATLAB in a new tab after a slight delay to allow notification to render
             setTimeout(() => {
-                window.open(getMatlabUrl(), '_blank');
+                window.open(notebookInfo.getTargetURL()!, '_blank');
             }, 1500);
         }
 
-        await openGeneratedFileInEditor(notebook, comm, generatedLiveCodeFilePath);
+        await openGeneratedFileInEditor(panel, comm, generatedLiveCodeFilePath);
     }
 }
 

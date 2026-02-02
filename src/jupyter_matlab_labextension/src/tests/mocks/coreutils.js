@@ -6,5 +6,4 @@ module.exports = {
     PageConfig: {
         getBaseUrl: jest.fn().mockReturnValue('http://localhost:8888/')
     }
-
 };

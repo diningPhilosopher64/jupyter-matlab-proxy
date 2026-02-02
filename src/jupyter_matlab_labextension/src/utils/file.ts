@@ -9,10 +9,10 @@ import { CheckFileExistsAction } from '../plugins/actions/checkFileExistsAction'
 import { getNewFileNameDialog } from './dialogs';
 
 export async function getFileNameForConversion (
-    notebook: NotebookPanel,
+    panel: NotebookPanel,
     comm: ICommunicationChannel
 ): Promise<string | null> {
-    const notebookName = notebook.context.path; // An ipynb file is guarranteed to be here as we are in a Notebook
+    const notebookName = panel.context.path; // An ipynb file is guarranteed to be here as we are in a Notebook
 
     const currentDir = PathExt.dirname(notebookName);
     const notebookNameWithoutExtension = PathExt.basename(
@@ -25,7 +25,7 @@ export async function getFileNameForConversion (
     const checkFileExistsAction = ActionFactory.createAction(
         ActionTypes.CHECK_FILE_EXISTS,
         true,
-        notebook
+        panel
     );
     await checkFileExistsAction.execute({ liveCodeFilePath: finalLiveCodeFilePath }, comm);
     const fileAlreadyExists = CheckFileExistsAction.getFileExistsStatus();

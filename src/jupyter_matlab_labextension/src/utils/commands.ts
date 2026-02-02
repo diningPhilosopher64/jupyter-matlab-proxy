@@ -41,8 +41,7 @@ export function openMatlabButtonHandler (targetURL: string): globalThis.Window |
 
 export async function openAsLiveCodeInMatlabButtonHandler (
     panel: NotebookPanel,
-    commService: ICommunicationService,
-    targetURL: string
+    commService: ICommunicationService
 ): Promise<void> {
     const notebookInfo = new NotebookInfo();
     await notebookInfo.update(panel);
@@ -66,7 +65,7 @@ export async function openAsLiveCodeInMatlabButtonHandler (
         const userSigninPromise = await displayUserSigninNotification();
         // No need to keep the window reference here as matlab window is
         // required to display to the liveCode file in the editor
-        openMatlabButtonHandler(targetURL);
+        openMatlabButtonHandler(notebookInfo.getTargetURL()!);
 
         await waitForUserToSignin(1000, comm, panel, userSigninPromise);
         await waitForMatlabToStart(1000, comm, panel);

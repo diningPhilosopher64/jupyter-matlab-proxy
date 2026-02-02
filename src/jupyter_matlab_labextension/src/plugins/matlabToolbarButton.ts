@@ -10,7 +10,7 @@ import {
 import { ToolbarButton } from '@jupyterlab/apputils';
 // import { PageConfig } from '@jupyterlab/coreutils';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
-import { INotebookModel, NotebookPanel } from '@jupyterlab/notebook';
+import { INotebookModel, NotebookPanel, INotebookTracker } from '@jupyterlab/notebook';
 import { DisposableDelegate } from '@lumino/disposable';
 import { Menu } from '@lumino/widgets';
 
@@ -24,12 +24,14 @@ export class MatlabToolbarButtonExtension
 implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
     private readonly commService: ICommunicationService;
     private readonly app: JupyterFrontEnd;
+    private readonly notebookTracker: INotebookTracker;
     // Keep track of whether commands have been registered
     private static commandsRegistered = false;
 
-    constructor (commService: ICommunicationService, app: JupyterFrontEnd) {
+    constructor (commService: ICommunicationService, app: JupyterFrontEnd, notebookTracker: INotebookTracker) {
         this.commService = commService;
         this.app = app;
+        this.notebookTracker = notebookTracker;
     }
 
     createNew (
@@ -60,8 +62,11 @@ implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
                         className: 'openMATLABButton matlab-toolbar-button-spaced',
                         icon: matlabIcon,
                         execute: async () => {
-                            const currentPanel = this.app.shell.currentWidget as NotebookPanel;
-                            // const notebookInfo = new NotebookInfo();
+                            const currentPanel = this.notebookTracker.currentWidget;
+                            if (!currentPanel) {
+                                console.error('No active notebook panel');
+                                return;
+                            }
                             await notebookInfo.update(currentPanel);
                             await openMatlabButtonHandler(notebookInfo.getTargetURL()!);
                         }
@@ -72,10 +77,12 @@ implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
                         className: 'openMATLABButton matlab-toolbar-button-spaced',
                         icon: matlabIcon,
                         execute: async () => {
-                            const currentPanel = this.app.shell.currentWidget as NotebookPanel;
-                            // const notebookInfo = new NotebookInfo();
-                            await notebookInfo.update(currentPanel);
-                            openAsLiveCodeInMatlabButtonHandler(currentPanel, this.commService, notebookInfo.getTargetURL()!);
+                            const currentPanel = this.notebookTracker.currentWidget;
+                            if (!currentPanel) {
+                                console.error('No active notebook panel');
+                                return;
+                            }
+                            openAsLiveCodeInMatlabButtonHandler(currentPanel, this.commService);
                         }
                     });
 
@@ -124,9 +131,9 @@ implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
 export const matlabToolbarButtonPlugin: JupyterFrontEndPlugin<void> = {
     id: '@mathworks/matlabToolbarButtonPlugin',
     autoStart: true,
-    requires: [IMatlabCommunication],
-    activate: (app: JupyterFrontEnd, commService: ICommunicationService) => {
-        const matlabToolbarButton = new MatlabToolbarButtonExtension(commService, app);
+    requires: [IMatlabCommunication, INotebookTracker],
+    activate: (app: JupyterFrontEnd, commService: ICommunicationService, notebookTracker: INotebookTracker) => {
+        const matlabToolbarButton = new MatlabToolbarButtonExtension(commService, app, notebookTracker);
         app.docRegistry.addWidgetExtension('Notebook', matlabToolbarButton);
     }
 };

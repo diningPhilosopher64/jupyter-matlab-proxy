@@ -21,7 +21,8 @@ jest.mock('../../icons', () => ({
 
 // Mock JupyterLab dependencies - must be before imports
 jest.mock('@jupyterlab/notebook', () => ({
-    NotebookPanel: jest.fn()
+    NotebookPanel: jest.fn(),
+    INotebookTracker: Symbol('INotebookTracker')
 }));
 
 jest.mock('@jupyterlab/apputils', () => ({
@@ -119,6 +120,11 @@ const createMockJupyterFrontEnd = () => ({
     }
 });
 
+// Mock for INotebookTracker
+const createMockNotebookTracker = (currentWidget: any = null) => ({
+    currentWidget
+});
+
 describe('matlabToolbarButton', () => {
     afterEach(() => {
         jest.clearAllMocks();
@@ -132,12 +138,14 @@ describe('matlabToolbarButton', () => {
         let context: any;
         let commService: any;
         let app: any;
+        let notebookTracker: any;
 
         beforeEach(() => {
             commService = createMockCommService();
             app = createMockJupyterFrontEnd();
-            extension = new MatlabToolbarButtonExtension(commService, app);
             panel = createMockNotebookPanel('MATLAB Kernel', 'test-kernel');
+            notebookTracker = createMockNotebookTracker(panel);
+            extension = new MatlabToolbarButtonExtension(commService, app, notebookTracker);
             context = {};
         });
 
@@ -350,10 +358,12 @@ describe('matlabToolbarButton', () => {
         test('should register extension with docRegistry on activation', () => {
             const app = createMockJupyterFrontEnd();
             const commService = createMockCommService();
+            const notebookTracker = createMockNotebookTracker();
 
             matlabToolbarButtonPlugin.activate(
                 app as unknown as JupyterFrontEnd,
-                commService
+                commService,
+                notebookTracker as any
             );
 
             expect(app.docRegistry.addWidgetExtension).toHaveBeenCalledWith(
@@ -365,10 +375,12 @@ describe('matlabToolbarButton', () => {
         test('should create a MatlabToolbarButtonExtension instance on activation', () => {
             const app = createMockJupyterFrontEnd();
             const commService = createMockCommService();
+            const notebookTracker = createMockNotebookTracker();
 
             matlabToolbarButtonPlugin.activate(
                 app as unknown as JupyterFrontEnd,
-                commService
+                commService,
+                notebookTracker as any
             );
 
             const extensionArg = (app.docRegistry.addWidgetExtension as jest.Mock)

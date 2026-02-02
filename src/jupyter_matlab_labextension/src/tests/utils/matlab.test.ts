@@ -9,9 +9,7 @@ import {
     displayStartingMatlabNotification
 } from '../../utils/notifications';
 
-// Pull named functions from module
 const {
-    getMatlabUrl,
     getMatlabProxyStatus,
     startMatlab,
     waitForMatlabToStart,
@@ -71,22 +69,21 @@ describe('matlab utils', () => {
         panel = {
             context: {
                 path: '/home/user/notebook.ipynb'
+            },
+            sessionContext: {
+                isReady: true,
+                ready: Promise.resolve(),
+                kernelDisplayName: 'MATLAB Kernel',
+                session: {
+                    kernel: {
+                        id: 'kernel-123',
+                        status: 'idle'
+                    }
+                }
             }
         };
 
         comm = {};
-    });
-
-    // =========================================================
-    // getMatlabUrl
-    // =========================================================
-    it('getMatlabUrl builds URL using PageConfig baseUrl', () => {
-        mockedGetBaseUrl.mockReturnValue('http://localhost:8888/');
-
-        const url = getMatlabUrl();
-
-        expect(mockedGetBaseUrl).toHaveBeenCalled();
-        expect(url).toBe('http://localhost:8888/matlab/default/index.html');
     });
 
     // =========================================================
@@ -277,7 +274,7 @@ describe('matlab utils', () => {
             expect(mockedDisplayOpenMatlab).toHaveBeenCalled();
             expect(editAction.execute).toHaveBeenCalled();
             expect(mockWindowOpen).toHaveBeenCalledWith(
-                'http://localhost:8888/matlab/default/index.html',
+                'http://localhost:8888/matlab/kernel-123/',
                 '_blank'
             );
         });

@@ -7,7 +7,7 @@ import { ICommunicationChannel } from '../matlabCommunication';
  * @param comm The communication channel to validate
  * @returns true if the channel is valid, false otherwise
  */
-export function isCommValid(comm: ICommunicationChannel): boolean {
+export function isCommValid (comm: ICommunicationChannel): boolean {
     if (!comm || comm.isDisposed) {
         console.error('Communication channel is not available');
         return false;
