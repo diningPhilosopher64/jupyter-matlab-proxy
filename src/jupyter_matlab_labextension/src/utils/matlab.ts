@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2026 The MathWorks, Inc.
 
 import { ICommunicationChannel } from '../plugins/matlabCommunication';
 import { NotebookPanel } from '@jupyterlab/notebook';
@@ -10,6 +10,7 @@ import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 import { displayOpenMatlabNotification, displayStartingMatlabNotification } from './notifications';
 import { ConvertAction } from '../plugins/actions/convertAction';
 import { NotebookInfo } from './notebook';
+import { openMatlabInNewTab } from './commands';
 
 export async function getMatlabProxyStatus (panel: NotebookPanel, comm: ICommunicationChannel): Promise<MATLABStatus> {
     const matlabStatusAction = ActionFactory.createAction(
@@ -87,10 +88,12 @@ export async function convertToLiveCodeAndOpenMatlab (
     if (generatedLiveCodeFilePath) {
         if (shouldOpenMatlab) {
             displayOpenMatlabNotification();
-            // Open MATLAB in a new tab after a slight delay to allow notification to render
-            setTimeout(() => {
-                window.open(notebookInfo.getTargetURL()!, '_blank');
-            }, 1500);
+            // 1500ms or 1.5sec delay before opening a new tab for better UX.
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            const matlabTab = await openMatlabInNewTab(notebookInfo.getTargetURL()!);
+            if (!matlabTab || matlabTab.closed) {
+                return;
+            }
         }
 
         await openGeneratedFileInEditor(panel, comm, generatedLiveCodeFilePath);

@@ -4,7 +4,7 @@ import { NotebookInfo } from '../utils/notebook';
 import { getFileNameForConversion } from './file';
 import { ICommunicationService } from '../plugins/matlabCommunication';
 import { displayUserSigninNotification } from './notifications';
-import { showMatlabKernelIsBusyDialog } from './dialogs';
+import { showMatlabKernelIsBusyDialog, showPopupBlockedDialog } from './dialogs';
 
 export function getOpenMatlabCommandId (): string {
     return 'matlab:open-matlab';
@@ -34,8 +34,13 @@ export function exportAsLiveCodeMPaletteItemCommandId (): string {
     return 'matlab-palette-item:export-to-live-code-m';
 }
 
-export function openMatlabButtonHandler (targetURL: string): globalThis.Window | null {
+export async function openMatlabInNewTab (targetURL: string): Promise<globalThis.Window | null> {
     const matlabTab = window.open(targetURL, '_blank');
+    // If popups were blocked by the user, inform them using a dialog box.
+    if (!matlabTab || matlabTab.closed) {
+        await showPopupBlockedDialog();
+        return null;
+    }
     return matlabTab;
 }
 
@@ -65,8 +70,12 @@ export async function openAsLiveCodeInMatlabButtonHandler (
         const userSigninPromise = await displayUserSigninNotification();
         // No need to keep the window reference here as matlab window is
         // required to display to the liveCode file in the editor
-        openMatlabButtonHandler(notebookInfo.getTargetURL()!);
-
+        const matlabTab = await openMatlabInNewTab(notebookInfo.getTargetURL()!);
+        // If matlabTab is null, it means that popups were blocked by the browser, so do not
+        // proceed with the rest of the flow.
+        if (!matlabTab || matlabTab.closed) {
+            return;
+        }
         await waitForUserToSignin(1000, comm, panel, userSigninPromise);
         await waitForMatlabToStart(1000, comm, panel);
 

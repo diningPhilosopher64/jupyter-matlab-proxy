@@ -4,7 +4,7 @@ import { NotebookPanel } from '@jupyterlab/notebook';
 import { ICommunicationService } from '../plugins/matlabCommunication';
 import { displayUserSigninNotification } from './notifications';
 import { showMatlabKernelIsBusyDialog } from './dialogs';
-import { openMatlabButtonHandler } from './commands';
+import { openMatlabInNewTab } from './commands';
 import { getFileNameForConversion } from '../utils/file';
 import { convertToLiveCode, startMatlab, waitForMatlabToStart, waitForUserToSignin } from '../utils/matlab';
 import { NotebookInfo } from './notebook';
@@ -22,6 +22,7 @@ export async function exportHandler (
     }
     const notebookInfo = new NotebookInfo();
     await notebookInfo.update(panel);
+    await panel.context.save();
 
     if (notebookInfo.isBusy()) {
         showMatlabKernelIsBusyDialog();
@@ -42,11 +43,17 @@ export async function exportHandler (
     if (!status.isMatlabLicensed) {
         const userSigninPromise = await displayUserSigninNotification();
 
-        const window = openMatlabButtonHandler(targetURL);
+        const window = await openMatlabInNewTab(targetURL);
+        // If Pop up is blocked or the user closed the tab, do not proceed with the rest of the flow
+        if (!window || window.closed) {
+            return;
+        }
+
+        // Wait for the user to complete sign in
         await waitForUserToSignin(1000, comm, panel, userSigninPromise);
 
         // As this is export workflow, it is not required to open the matlab editor.
-        // So, close the window and proceed starting matlab and conversion to mlx
+        // So, close the window once sign in is done and proceed starting matlab and conversion to mlx
         if (window && !window.closed) {
             window.close();
         }

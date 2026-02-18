@@ -33,13 +33,19 @@ class EditAction(ActionCommand):
 
     async def __wait_for_rootapp_instance_to_be_set(self):
         getinstance_code = "matlab.ui.container.internal.RootApp.getInstance()"
-
-        start = time.time()
-
+        # Wait for the JSD to start loading before sending the root app instance.
+        # If request is sent too early, any commands executed will have their outputs missing 
+        # TODO:Remove this sleep after the above bug is fixed.
+        self.log.debug(f"\n\n Waiting for 5 seconds before sending rootapp request")
+        await asyncio.sleep(5)
+        
         time_taken, time_out = 0, 30
+        # Keep checking if instance is set
         while True:
-            # Keep checking if instance is set
+            
             try:
+                self.log.debug("Waiting for an additional 1 second every time before sending the request")
+                await asyncio.sleep(1)
                 eval_response = (
                     await self.kernel.mwi_comm_helper.send_eval_request_to_matlab(
                         getinstance_code
@@ -59,15 +65,13 @@ class EditAction(ActionCommand):
                         # Sleep for a second to ensure desktop state is confirmed.
                         break
                     else:
-                        self.log.info("Root app instance is initializing, retrying...")
-                        await asyncio.sleep(0.25)
+                        self.log.info("\n\nRoot app instance is initializing, retrying...")
 
             except Exception as err:
                 self.log.error(f"Edit action failed with error: {err}")
                 raise err
 
             finally:
-                end = time.time()
                 time_taken += 1
                 if time_taken > time_out:
                     err = TimeoutError(
@@ -76,9 +80,6 @@ class EditAction(ActionCommand):
                     self.log.error(err)
                     raise err
 
-        self.log.info(
-            f"\n\nTime taken so far to check desktop in use: {end - start} seconds"
-        )
 
     async def __send_edit_request(self, comm, mlx_file_path):
         # Client type is set on the jsd, now send eval request to open mlx file
@@ -142,14 +143,6 @@ class EditAction(ActionCommand):
         )
 
         try:
-            # # Checking for client type to be set to jsd_rmt_tmw
-            # await self.__wait_for_client_type_to_be_set(comm)
-
-            # # Checking for desktop('inuse') to return logical = 1
-            # Takes around 7 seconds in total for 25a.
-            # Bug in 24b, 23b and 20b showing logical = 0 even after desktop is visible.
-            # await self.__wait_for_desktop_to_be_inuse()
-
             # Checking for RootApp instance to be set
             # Takes 7 seconds in 25a and 7 seconds in 24b.
             await self.__wait_for_rootapp_instance_to_be_set()

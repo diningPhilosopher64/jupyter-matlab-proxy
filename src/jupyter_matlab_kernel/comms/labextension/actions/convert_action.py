@@ -32,8 +32,7 @@ class ConvertAction(ActionCommand):
             str: MATLAB code which converts .mlx to live code .m and deletes .mlx file
         """
 
-        # return f"editor = matlab.desktop.editor.openDocument('{livecode_filepath}',Visible=1); editor.Opened; editor.saveAs('{rich_m_filepath}'); delete('{livecode_filepath}');"
-        return f"editor = matlab.desktop.editor.openDocument('{mlx_livecode_filepath}',Visible=0); editor.Opened; editor.saveAs('{m_livecode_filepath}');editor.closeNoPrompt; clear editor;"
+        return f"editor = matlab.desktop.editor.openDocument('{mlx_livecode_filepath}',Visible=0); editor.Opened; editor.saveAs('{m_livecode_filepath}');editor.closeNoPrompt; clear editor;delete('{mlx_livecode_filepath}');"
 
     def _is_matlab_version_25a_or_later(self, version) -> bool:
         """Checks if MATLAB version is 25a or later"""
@@ -107,7 +106,7 @@ class ConvertAction(ActionCommand):
 
             if eval_response["isError"]:
                 self.log.error(
-                    f"Failed to convert file with error:{eval_response['response_str']}"
+                    f"Failed to convert file with error:{eval_response['responseStr']}"
                 )
                 comm.send(
                     {

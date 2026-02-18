@@ -16,7 +16,7 @@ import { Menu } from '@lumino/widgets';
 
 import { IMatlabCommunication, ICommunicationService } from './matlabCommunication';
 import { NotebookInfo } from '../utils/notebook';
-import { getOpenAsLiveCodeMLXInMatlabCommandId, getOpenMatlabCommandId, openAsLiveCodeInMatlabButtonHandler, openMatlabButtonHandler } from '../utils/commands';
+import { getOpenAsLiveCodeMLXInMatlabCommandId, getOpenMatlabCommandId, openAsLiveCodeInMatlabButtonHandler, openMatlabInNewTab } from '../utils/commands';
 
 import { matlabIcon } from '../icons';
 
@@ -68,7 +68,8 @@ implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
                                 return;
                             }
                             await notebookInfo.update(currentPanel);
-                            await openMatlabButtonHandler(notebookInfo.getTargetURL()!);
+                            // Ignoring the window return value as there isn't anything to do after.
+                            await openMatlabInNewTab(notebookInfo.getTargetURL()!);
                         }
                     });
 
@@ -82,6 +83,8 @@ implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
                                 console.error('No active notebook panel');
                                 return;
                             }
+                            // Save the notebook and then begin conversion.
+                            await currentPanel.context.save();
                             openAsLiveCodeInMatlabButtonHandler(currentPanel, this.commService);
                         }
                     });
