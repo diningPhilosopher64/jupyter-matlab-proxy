@@ -15,8 +15,7 @@ import { openMatlabInNewTab } from './commands';
 export async function getMatlabProxyStatus (panel: NotebookPanel, comm: ICommunicationChannel): Promise<MATLABStatus> {
     const matlabStatusAction = ActionFactory.createAction(
         ActionTypes.MATLAB_STATUS,
-        true,
-        panel
+        true
     );
     await matlabStatusAction.execute(null, comm);
     return MatlabStatusAction.getStatus();
@@ -29,8 +28,7 @@ export async function startMatlab (
     // Send StartMatlabProxy action to kernel. This would be a no-op if matlab-proxy is already up
     const startMatlabProxyAction = ActionFactory.createAction(
         ActionTypes.START_MATLAB_PROXY,
-        true,
-        notebook
+        true
     );
     await startMatlabProxyAction.execute(null, comm);
 
@@ -47,8 +45,7 @@ export async function waitForMatlabToStart (
 ): Promise<void> {
     const matlabStatusAction = ActionFactory.createAction(
         ActionTypes.MATLAB_STATUS,
-        true,
-        notebook
+        true
     );
     const matlabStartPromise = displayStartingMatlabNotification();
 
@@ -76,14 +73,14 @@ export async function waitForMatlabToStart (
 }
 
 export async function convertToLiveCodeAndOpenMatlab (
-    panel: NotebookPanel,
+    notebook: NotebookPanel,
     comm: ICommunicationChannel,
     liveCodeFilePath: string,
     shouldOpenMatlab: boolean = true
 ): Promise<void> {
-    const generatedLiveCodeFilePath = await convertToLiveCode(panel, comm, liveCodeFilePath);
+    const generatedLiveCodeFilePath = await convertToLiveCode(notebook, comm, liveCodeFilePath);
     const notebookInfo = new NotebookInfo();
-    await notebookInfo.update(panel);
+    await notebookInfo.update(notebook);
 
     if (generatedLiveCodeFilePath) {
         if (shouldOpenMatlab) {
@@ -96,7 +93,7 @@ export async function convertToLiveCodeAndOpenMatlab (
             }
         }
 
-        await openGeneratedFileInEditor(panel, comm, generatedLiveCodeFilePath);
+        await openGeneratedFileInEditor(notebook, comm, generatedLiveCodeFilePath);
     }
 }
 
@@ -106,8 +103,7 @@ export async function openGeneratedFileInEditor (
     liveCodeFilePath: string): Promise<void> {
     const editAction = ActionFactory.createAction(
         ActionTypes.EDIT,
-        true,
-        notebook
+        true
     );
     await editAction.execute(
         { action: ActionTypes.EDIT, liveCodeFilePath },
@@ -122,8 +118,7 @@ export async function convertToLiveCode (
 ): Promise<string> {
     const convertAction = ActionFactory.createAction(
         ActionTypes.CONVERT,
-        true,
-        notebook
+        true
     );
     await convertAction.execute(
         {
@@ -138,14 +133,12 @@ export async function convertToLiveCode (
 
 export async function waitForUserToSignin (sleepInMS: number,
     comm: ICommunicationChannel,
-    notebook: NotebookPanel,
     promise: PromiseDelegate<ReadonlyJSONValue>,
     timeoutInMS: number = 600000 // Default timeout for User to finish Signin is 10 minutes
 ): Promise<void> {
     const matlabStatusAction = ActionFactory.createAction(
         ActionTypes.MATLAB_STATUS,
-        true,
-        notebook
+        true
     );
 
     let timeoutReached = false;
@@ -169,15 +162,4 @@ export async function waitForUserToSignin (sleepInMS: number,
         }
         await new Promise((resolve) => setTimeout(resolve, sleepInMS));
     }
-}
-
-export function sendConvertRequest (
-    data: any,
-    comm: ICommunicationChannel
-): boolean {
-    comm.send({
-        action: ActionTypes.CONVERT,
-        data
-    });
-    return true;
 }

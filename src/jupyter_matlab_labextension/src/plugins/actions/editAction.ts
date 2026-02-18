@@ -51,6 +51,7 @@ export class EditAction extends BaseAction {
             console.error('Received error from kernel ', data.error);
             if (EditAction.blockingPromise) {
                 EditAction.blockingPromise.reject({ reason: data.error });
+                EditAction.blockingPromise = null;
             }
             return;
         }

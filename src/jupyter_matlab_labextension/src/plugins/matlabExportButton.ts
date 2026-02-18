@@ -43,12 +43,11 @@ export const matlabExportPlugin: JupyterFrontEndPlugin<void> = {
 
         const { commands } = app;
         const fileMenu = mainMenu.fileMenu;
-        const targetURL = notebookInfo.getTargetURL()!;
 
         commands.addCommand(exportAsLiveCodeMlxPaletteItemCommandId(), {
             label: 'Save and Export Notebook: MATLAB Live Code',
             execute: async () => {
-                await exportHandler(commService, notebookTracker.currentWidget, targetURL);
+                await exportHandler(commService, notebookTracker.currentWidget);
             },
             isEnabled: () => notebookInfo.isMatlabNotebook()
         });
@@ -71,7 +70,7 @@ export const matlabExportPlugin: JupyterFrontEndPlugin<void> = {
             commands.addCommand(exportAsLiveCodeMlxMenuItemCommandId(), {
                 label: 'MATLAB Live Code',
                 execute: async () => {
-                    await exportHandler(commService, notebookTracker.currentWidget, targetURL);
+                    await exportHandler(commService, notebookTracker.currentWidget);
                 },
                 isEnabled: () => notebookInfo.isMatlabNotebook()
             });

@@ -13,9 +13,9 @@ class CheckFileExistsAction(ActionCommand):
         pass
 
     def validate_data(self, data):
-        if "liveCodeFilePath" not in data:
+        if "ipynbFilePath" not in data:
             raise ValueError(
-                "Invalid data for CheckFileExistsAction: 'liveCodeFilePath' is required."
+                "Invalid data for CheckFileExistsAction: 'ipynbFilePath' is required."
             )
 
     async def execute(self, comm, data):
@@ -37,11 +37,12 @@ class CheckFileExistsAction(ActionCommand):
             )
             return
 
-        file_to_check = data.get("liveCodeFilePath", "")
 
-        self.log.debug(f"File to check if it exists: {file_to_check}")
+        ipynb_filepath = data.get("ipynbFilePath", "")
 
-        if not file_to_check:
+        self.log.debug(f"File to check if it exists: {ipynb_filepath}")
+
+        if not ipynb_filepath:
             error = Exception("No file path provided for checking if it exists")
             self.log.error(str(error))
             comm.send(
@@ -53,11 +54,18 @@ class CheckFileExistsAction(ActionCommand):
             )
 
         else:
+            ipynb_filepath = Path(ipynb_filepath)
+            livecode_mlx_filepath = ipynb_filepath.parent / (ipynb_filepath.stem + ".mlx")
+            livecode_m_filepath = ipynb_filepath.parent / (ipynb_filepath.stem + ".m")
+            exists = livecode_mlx_filepath.exists() or livecode_m_filepath.exists()
+
+            self.log.debug(f'LiveCode file at {livecode_mlx_filepath} or {livecode_m_filepath} exists: {exists}')
+
             comm.send(
                 {
                     "action": ActionTypes.CHECK_FILE_EXISTS.value,
-                    "exists": Path(file_to_check).expanduser().resolve().exists(),
+                    "exists": exists,
                     "error": None,
                 }
             )
-            self.log.debug(f"File exists at {Path(file_to_check)}")
+            

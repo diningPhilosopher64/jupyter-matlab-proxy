@@ -7,39 +7,31 @@ import { ActionFactory } from '../plugins/actions/actionFactory';
 import { ActionTypes } from '../plugins/actions/actionTypes';
 import { CheckFileExistsAction } from '../plugins/actions/checkFileExistsAction';
 import { getNewFileNameDialog } from './dialogs';
+import { NotebookInfo } from './notebook';
 
 export async function getFileNameForConversion (
     panel: NotebookPanel,
     comm: ICommunicationChannel
 ): Promise<string | null> {
-    const notebookName = panel.context.path; // An ipynb file is guarranteed to be here as we are in a Notebook
-
-    const currentDir = PathExt.dirname(notebookName);
-    const notebookNameWithoutExtension = PathExt.basename(
-        notebookName,
-        PathExt.extname(notebookName)
-    );
-    const liveCodeFilePath = `${notebookNameWithoutExtension}.mlx`;
-    let finalLiveCodeFilePath = PathExt.join(currentDir, liveCodeFilePath);
-
+    const notebookInfo = new NotebookInfo();
+    await notebookInfo.update(panel);
+    const ipynbFilePath = notebookInfo.getCurrentFilePath()!;
     const checkFileExistsAction = ActionFactory.createAction(
         ActionTypes.CHECK_FILE_EXISTS,
-        true,
-        panel
+        true
     );
-    await checkFileExistsAction.execute({ liveCodeFilePath: finalLiveCodeFilePath }, comm);
+    await checkFileExistsAction.execute({ ipynbFilePath }, comm);
     const fileAlreadyExists = CheckFileExistsAction.getFileExistsStatus();
 
     if (fileAlreadyExists) {
-        const newFileName = await getNewFileNameDialog(notebookName, liveCodeFilePath);
+        const newFileName = await getNewFileNameDialog(notebookInfo.getCurrentFilename()!);
         console.debug('New file name chosen by the user is ', newFileName);
         if (newFileName) {
-            finalLiveCodeFilePath = PathExt.join(currentDir, newFileName);
-            return finalLiveCodeFilePath;
+            return PathExt.join(notebookInfo.getCurrentDirectory()!, newFileName);
         } else {
-            return null; // User neither provided a new file name nor chose to overwrite, so return early
+            return null; // User neither provided a new file name nor chose to overwrite, so return null
         }
     } else {
-        return finalLiveCodeFilePath;
+        return notebookInfo.getCurrentFilePath()!;
     }
 }

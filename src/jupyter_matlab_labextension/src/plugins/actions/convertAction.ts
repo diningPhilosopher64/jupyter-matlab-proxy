@@ -33,11 +33,11 @@ export class ConvertAction extends BaseAction {
 
         const timeout = 50000;
 
-        ConvertAction.blockingPromise = displayConversionNotification(
-            data,
-            comm,
-            timeout
-        );
+        comm.send({
+            action: this.getActionName(),
+            data
+        });
+        ConvertAction.blockingPromise = displayConversionNotification(timeout);
 
         if (this.blocking) {
             console.debug(

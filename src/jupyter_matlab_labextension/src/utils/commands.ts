@@ -76,7 +76,7 @@ export async function openAsLiveCodeInMatlabButtonHandler (
         if (!matlabTab || matlabTab.closed) {
             return;
         }
-        await waitForUserToSignin(1000, comm, panel, userSigninPromise);
+        await waitForUserToSignin(1000, comm, userSigninPromise);
         await waitForMatlabToStart(1000, comm, panel);
 
         await convertToLiveCodeAndOpenMatlab(panel, comm, finalLiveCodeFilePath, false);

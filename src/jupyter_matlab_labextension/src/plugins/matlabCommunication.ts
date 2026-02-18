@@ -61,11 +61,12 @@ implements
         let attempt = 1;
         let delayInMS = 200;
         const maxRetries = 5;
+        let comm: Kernel.IComm | undefined;
 
         while (attempt <= maxRetries) {
             try {
                 // Creates comm object on the client side
-                const comm = kernel.createComm(channelName);
+                comm = kernel.createComm(channelName);
 
                 // Attempts to open a channel with the kernel
                 await comm.open().done;
@@ -74,6 +75,9 @@ implements
             } catch (error) {
                 console.error('Error opening communication channel', error);
                 console.error(`Attempt #${attempt} failed. Waiting ${delayInMS}ms before next attempt.`);
+                if (comm && !comm.isDisposed) {
+                    comm.dispose();
+                }
             }
             // Wait for the delay
             await new Promise(resolve => setTimeout(resolve, delayInMS));
@@ -126,7 +130,7 @@ implements
                     const data = msg.content.data as CommunicationData;
                     console.debug('Recieved data from kernel: ', data);
                     const actionType = data!.action as string;
-                    const action = ActionFactory.createAction(actionType, false, panel);
+                    const action = ActionFactory.createAction(actionType, false);
 
                     // Execute onMsg handler for the current action after receiving the response from the kernel
                     action.onMsg(data, comm);
@@ -138,6 +142,10 @@ implements
                     console.log(`Comm with ID:${comm.commId} closed.`);
                 };
 
+                if (panel.isDisposed) {
+                    comm.close();
+                    return;
+                }
                 this._comms.set(panel.id, comm);
             })
             .catch((error) => {

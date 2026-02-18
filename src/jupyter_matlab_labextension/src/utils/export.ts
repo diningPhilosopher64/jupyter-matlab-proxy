@@ -12,8 +12,7 @@ import { Notification } from '@jupyterlab/apputils';
 
 export async function exportHandler (
     commService: ICommunicationService,
-    panel: NotebookPanel | null,
-    targetURL: string
+    panel: NotebookPanel | null
 ): Promise<void> {
     console.debug('Exporting to live code', panel);
     if (!panel) {
@@ -43,14 +42,14 @@ export async function exportHandler (
     if (!status.isMatlabLicensed) {
         const userSigninPromise = await displayUserSigninNotification();
 
-        const window = await openMatlabInNewTab(targetURL);
+        const window = await openMatlabInNewTab(notebookInfo.getTargetURL()!);
         // If Pop up is blocked or the user closed the tab, do not proceed with the rest of the flow
         if (!window || window.closed) {
             return;
         }
 
         // Wait for the user to complete sign in
-        await waitForUserToSignin(1000, comm, panel, userSigninPromise);
+        await waitForUserToSignin(1000, comm, userSigninPromise);
 
         // As this is export workflow, it is not required to open the matlab editor.
         // So, close the window once sign in is done and proceed starting matlab and conversion to mlx

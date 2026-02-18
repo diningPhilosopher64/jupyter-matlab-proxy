@@ -26,7 +26,7 @@ export class CheckFileExistsAction extends BaseAction {
     }
 
     public async execute (data: any, comm: ICommunicationChannel): Promise<void> {
-        if (!('liveCodeFilePath' in data)) {
+        if (!('ipynbFilePath' in data)) {
             console.error('Missing data for executing CheckFileExists action...');
             return;
         }
@@ -36,7 +36,7 @@ export class CheckFileExistsAction extends BaseAction {
         new PromiseDelegate<ReadonlyJSONValue>();
         }
 
-        if (this.sendCheckFileExistsRequest(data.liveCodeFilePath, comm)) {
+        if (this.sendCheckFileExistsRequest(data.ipynbFilePath, comm)) {
             console.debug('Successfully sent check file exists request to kernel.');
         } else {
             console.error('Failed to send check file exists request to kernel.');
@@ -88,7 +88,7 @@ export class CheckFileExistsAction extends BaseAction {
         comm.send({
             action: ActionTypes.CHECK_FILE_EXISTS,
             data: {
-                liveCodeFilePath: filePath
+                ipynbFilePath: filePath
             }
         });
         return true;

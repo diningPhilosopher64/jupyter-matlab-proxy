@@ -8,13 +8,11 @@ import { EditAction } from './editAction';
 import { MatlabStatusAction } from './matlabStatusAction';
 import { StartMatlabProxyAction } from './startMatlabProxyAction';
 import { CheckFileExistsAction } from './checkFileExistsAction';
-import { NotebookPanel } from '@jupyterlab/notebook';
 
 export class ActionFactory {
     static createAction (
         actionType: string,
-        blocking: boolean,
-        panel: NotebookPanel
+        blocking: boolean
     ): BaseAction {
         switch (actionType) {
             case ActionTypes.CONVERT:

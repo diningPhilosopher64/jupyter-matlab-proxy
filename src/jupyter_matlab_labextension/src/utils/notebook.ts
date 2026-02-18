@@ -47,10 +47,14 @@ export class NotebookInfo {
     */
     getCurrentFilePath (): string | undefined {
         if (this._notebookName) {
-            return path.join(PageConfig.getOption('serverRoot'), this._notebookName);
+            return path.join(this.getCurrentDirectory()!, this._notebookName);
         } else {
             return undefined;
         }
+    }
+
+    getCurrentDirectory (): string | undefined {
+        return PageConfig.getOption('serverRoot');
     }
 
     /*

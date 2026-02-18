@@ -1,7 +1,5 @@
 import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 import { Notification } from '@jupyterlab/apputils';
-import { ICommunicationChannel } from '../plugins/matlabCommunication';
-import { sendConvertRequest } from './matlab';
 
 export async function displayUserSigninNotification () : Promise<PromiseDelegate<ReadonlyJSONValue>> {
     const userSigninPromise = new PromiseDelegate<ReadonlyJSONValue>();
@@ -53,33 +51,20 @@ export function displayOpenMatlabNotification () : void {
 }
 
 export function displayConversionNotification (
-    data: any,
-    comm: ICommunicationChannel,
     timeoutInMS: number = 50000) : PromiseDelegate<ReadonlyJSONValue> {
     const conversionPromise = new PromiseDelegate<ReadonlyJSONValue>();
 
+    setTimeout(() => {
+        if (conversionPromise) {
+            conversionPromise.reject({
+                reason: 'Conversion process timed out'
+            });
+        }
+    }, timeoutInMS);
+
     Notification.promise(conversionPromise.promise, {
         pending: {
-            message: ((): string => {
-                if (
-                    sendConvertRequest(data, comm)
-                ) {
-                    console.debug('Successfully sent convert request to MATLAB.');
-                } else {
-                    console.error('Failed to send conversion request to MATLAB.');
-                }
-
-                setTimeout(() => {
-                    // If the conversion takes more than timeout, throw error
-                    if (conversionPromise) {
-                        conversionPromise.reject({
-                            reason: 'Conversion process timed out'
-                        });
-                    }
-                }, timeoutInMS);
-
-                return 'Waiting for conversion to complete...';
-            })(),
+            message: 'Waiting for conversion to complete...',
             options: { autoClose: false }
         },
         success: {

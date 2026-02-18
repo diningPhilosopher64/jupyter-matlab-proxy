@@ -2,10 +2,9 @@ import { showDialog, Dialog, InputDialog } from '@jupyterlab/apputils';
 import { PathExt } from '@jupyterlab/coreutils';
 
 export async function getNewFileNameDialog (
-    currentFileName: string,
-    mlxFileName: string
+    currentFileName: string
 ): Promise<string | null> {
-    const mlxFileNameWithoutExtension = mlxFileName.split('.')[0];
+    const mlxFileNameWithoutExtension = currentFileName.split('.')[0];
     const result = await showDialog({
         title: `"${mlxFileNameWithoutExtension}" Live Code file already exists.`,
         body: `A file named "${mlxFileNameWithoutExtension}" Live Code already exists in the folder. Choose a new name or replace it to overwrite its current contents`,
