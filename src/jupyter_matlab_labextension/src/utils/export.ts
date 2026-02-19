@@ -59,6 +59,6 @@ export async function exportHandler (
     }
 
     await waitForMatlabToStart(1000, comm, panel);
-    await convertToLiveCode(panel, comm, finalMlxFilePath);
+    await convertToLiveCode(panel, comm, notebookInfo.getCurrentFilePath()!, finalMlxFilePath);
     Notification.info(`File ${finalMlxFilePath} ready`, { autoClose: 2000 });
 }

@@ -57,6 +57,10 @@ export class NotebookInfo {
         return PageConfig.getOption('serverRoot');
     }
 
+    getCurrentFileName (): string | undefined {
+        return this._notebookName;
+    }
+
     /*
      * Updates the tracked notebook panel and refreshes its derived state:
      * - whether it is a MATLAB notebook (via kernelspec metadata),

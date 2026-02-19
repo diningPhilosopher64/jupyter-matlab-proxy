@@ -78,9 +78,9 @@ export async function convertToLiveCodeAndOpenMatlab (
     liveCodeFilePath: string,
     shouldOpenMatlab: boolean = true
 ): Promise<void> {
-    const generatedLiveCodeFilePath = await convertToLiveCode(notebook, comm, liveCodeFilePath);
     const notebookInfo = new NotebookInfo();
     await notebookInfo.update(notebook);
+    const generatedLiveCodeFilePath = await convertToLiveCode(notebook, comm, notebookInfo.getCurrentFilePath()!, liveCodeFilePath);
 
     if (generatedLiveCodeFilePath) {
         if (shouldOpenMatlab) {
@@ -114,6 +114,7 @@ export async function openGeneratedFileInEditor (
 export async function convertToLiveCode (
     notebook: NotebookPanel,
     comm: ICommunicationChannel,
+    ipynbFilePath: string,
     liveCodeFilePath: string
 ): Promise<string> {
     const convertAction = ActionFactory.createAction(
@@ -122,7 +123,7 @@ export async function convertToLiveCode (
     );
     await convertAction.execute(
         {
-            ipynbFilePath: notebook.context.path,
+            ipynbFilePath,
             liveCodeFilePath
         },
         comm

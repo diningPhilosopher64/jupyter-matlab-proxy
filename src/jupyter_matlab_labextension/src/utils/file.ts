@@ -32,6 +32,8 @@ export async function getFileNameForConversion (
             return null; // User neither provided a new file name nor chose to overwrite, so return null
         }
     } else {
-        return notebookInfo.getCurrentFilePath()!;
+        const ipynbFileName = notebookInfo.getCurrentFileName()!;
+        const liveCodeFileName = ipynbFileName.replace(".ipynb", ".mlx");
+        return PathExt.join(notebookInfo.getCurrentDirectory()!, liveCodeFileName);
     }
 }
