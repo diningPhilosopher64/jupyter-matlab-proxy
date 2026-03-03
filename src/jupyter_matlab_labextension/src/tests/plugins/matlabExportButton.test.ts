@@ -1,3 +1,5 @@
+// Copyright 2026 The MathWorks, Inc.
+
 import { matlabExportPlugin } from '../../plugins/matlabExportButton';
 import { ICommunicationService } from '../../plugins/matlabCommunication';
 
@@ -13,14 +15,6 @@ jest.mock('@lumino/widgets', () => ({
         addItem: jest.fn()
     }))
 }));
-
-// jest.mock('../../utils/notebook', () => ({
-//   NotebookInfo: jest.fn().mockImplementation(() => ({
-//     update: jest.fn().mockResolvedValue(undefined),
-//     isMatlabNotebook: jest.fn().mockReturnValue(true),
-//     isBusy: jest.fn().mockReturnValue(false)
-//   }))
-// }));
 
 jest.mock('@jupyterlab/mainmenu', () => ({
     IMainMenu: jest.fn().mockImplementation(() => ({

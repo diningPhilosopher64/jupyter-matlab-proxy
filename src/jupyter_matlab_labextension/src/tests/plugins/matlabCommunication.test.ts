@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 // Mock dependencies from JupyterLab and other modules
 import { MatlabCommunicationExtension } from '../../plugins/matlabCommunication';

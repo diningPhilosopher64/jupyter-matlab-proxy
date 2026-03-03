@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2026 The MathWorks, Inc.
 
 import { MatlabStatusAction, MATLABStatus } from '../../../plugins/actions/matlabStatusAction';
 import { ActionTypes } from '../../../plugins/actions/actionTypes';

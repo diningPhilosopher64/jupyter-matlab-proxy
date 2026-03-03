@@ -1,3 +1,5 @@
+// Copyright 2026 The MathWorks, Inc.
+
 import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 import { Notification } from '@jupyterlab/apputils';
 

@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2026 The MathWorks, Inc.
 
 import { ConvertAction } from '../../../plugins/actions/convertAction';
 import { ActionTypes } from '../../../plugins/actions/actionTypes';
@@ -70,11 +70,7 @@ describe('ConvertAction', () => {
             const data = { ipynbFilePath: '/path/to/notebook.ipynb', liveCodeFilePath: '/path/to/file.mlx' };
             await action.execute(data, mockComm);
 
-            expect(mockedDisplayConversionNotification).toHaveBeenCalledWith(
-                data,
-                mockComm,
-                50000
-            );
+            expect(mockedDisplayConversionNotification).toHaveBeenCalledWith(50000);
         });
 
         it('should wait for promise when blocking is true', async () => {

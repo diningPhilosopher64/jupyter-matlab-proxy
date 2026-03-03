@@ -241,7 +241,7 @@ This opens an untitled `.m` file where you can write MATLAB code with syntax hig
 
 ----
 
-Copyright 2021-2025 The MathWorks, Inc.
+Copyright 2021-2026 The MathWorks, Inc.
 
 ----
 

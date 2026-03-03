@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 import { ActionFactory } from '../../../plugins/actions/actionFactory';
 import { ActionTypes } from '../../../plugins/actions/actionTypes';
@@ -9,21 +9,7 @@ import { MatlabStatusAction } from '../../../plugins/actions/matlabStatusAction'
 import { StartMatlabProxyAction } from '../../../plugins/actions/startMatlabProxyAction';
 import { CheckFileExistsAction } from '../../../plugins/actions/checkFileExistsAction';
 
-// Mock NotebookPanel
-jest.mock('@jupyterlab/notebook', () => ({
-    NotebookPanel: jest.fn()
-}));
-
 describe('ActionFactory', () => {
-    let mockPanel: any;
-
-    beforeEach(() => {
-        mockPanel = {
-            id: 'test-panel',
-            context: { path: 'test.ipynb' }
-        };
-    });
-
     describe('createAction', () => {
         it('should create the correct action class for each action type', () => {
             const actionTypeToClass = [
@@ -35,7 +21,7 @@ describe('ActionFactory', () => {
             ];
 
             actionTypeToClass.forEach(({ type, expectedClass }) => {
-                const action = ActionFactory.createAction(type, true, mockPanel);
+                const action = ActionFactory.createAction(type, true);
 
                 expect(action).toBeInstanceOf(expectedClass);
                 expect(action).toBeInstanceOf(BaseAction);
@@ -44,21 +30,19 @@ describe('ActionFactory', () => {
 
         it('should throw error for UNKNOWN action type', () => {
             expect(() => {
-                ActionFactory.createAction(ActionTypes.UNKNOWN, true, mockPanel);
+                ActionFactory.createAction(ActionTypes.UNKNOWN, true);
             }).toThrow('Unknown action type: unknown');
         });
 
         it('should pass blocking parameter to action', () => {
             const blockingAction = ActionFactory.createAction(
                 ActionTypes.EDIT,
-                true,
-                mockPanel
+                true
             ) as EditAction;
 
             const nonBlockingAction = ActionFactory.createAction(
                 ActionTypes.EDIT,
-                false,
-                mockPanel
+                false
             ) as EditAction;
 
             expect(blockingAction.blocking).toBe(true);
@@ -79,8 +63,7 @@ describe('ActionFactory', () => {
             it(`should create action with execute method for ${actionType}`, () => {
                 const action = ActionFactory.createAction(
                     actionType,
-                    true,
-                    mockPanel
+                    true
                 );
 
                 expect(typeof action.execute).toBe('function');
@@ -89,8 +72,7 @@ describe('ActionFactory', () => {
             it(`should create action with onMsg method for ${actionType}`, () => {
                 const action = ActionFactory.createAction(
                     actionType,
-                    true,
-                    mockPanel
+                    true
                 );
 
                 expect(typeof action.onMsg).toBe('function');
@@ -99,8 +81,7 @@ describe('ActionFactory', () => {
             it(`should create action with getActionName method for ${actionType}`, () => {
                 const action = ActionFactory.createAction(
                     actionType,
-                    true,
-                    mockPanel
+                    true
                 );
 
                 expect(typeof action.getActionName).toBe('function');

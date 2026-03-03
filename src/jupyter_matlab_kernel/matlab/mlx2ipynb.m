@@ -35,7 +35,6 @@
 %
 % >> mlx2ipynb("EmbedImages", false)
 %
-% Copyright 2023 The MathWorks, Inc.
 %-------------------------------------------------------------------
 
 function ipynbFilename = mlx2ipynb(varargin)

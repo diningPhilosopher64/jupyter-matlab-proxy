@@ -1,7 +1,7 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2026 The MathWorks, Inc.
 
 import {
-    openMatlabButtonHandler,
+    openMatlabInNewTab,
     openAsLiveCodeInMatlabButtonHandler
 } from '../../utils/commands';
 import { Notification } from '@jupyterlab/apputils';
@@ -86,12 +86,12 @@ describe('Commands module', () => {
         };
     });
 
-    it('openMatlabButtonHandler opens MATLAB in new tab', () => {
+    it('openMatlabInNewTab opens MATLAB in new tab', async () => {
         const mockWindowOpen = jest.fn();
         (global as any).window = { open: mockWindowOpen };
         mockWindowOpen.mockReturnValue({});
 
-        openMatlabButtonHandler(targetURL);
+        await openMatlabInNewTab(targetURL);
 
         expect(mockWindowOpen).toHaveBeenCalledTimes(1);
         expect(mockWindowOpen).toHaveBeenCalledWith(targetURL, '_blank');

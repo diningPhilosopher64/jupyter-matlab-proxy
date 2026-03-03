@@ -52,7 +52,7 @@ describe('CheckFileExistsAction', () => {
     });
 
     describe('execute', () => {
-        it('should log error when liveCodeFilePath is missing', async () => {
+        it('should log error when ipynbFilePath is missing', async () => {
             const errorSpy = jest.spyOn(console, 'error').mockImplementation();
 
             await action.execute({}, mockComm);
@@ -63,13 +63,13 @@ describe('CheckFileExistsAction', () => {
             errorSpy.mockRestore();
         });
 
-        it('should send check file exists request when liveCodeFilePath is provided', async () => {
-            await action.execute({ liveCodeFilePath: '/path/to/file.mlx' }, mockComm);
+        it('should send check file exists request when ipynbFilePath is provided', async () => {
+            await action.execute({ ipynbFilePath: '/path/to/file.ipynb' }, mockComm);
 
             expect(mockComm.send).toHaveBeenCalledWith({
                 action: ActionTypes.CHECK_FILE_EXISTS,
                 data: {
-                    liveCodeFilePath: '/path/to/file.mlx'
+                    ipynbFilePath: '/path/to/file.ipynb'
                 }
             });
         });
@@ -77,7 +77,7 @@ describe('CheckFileExistsAction', () => {
         it('should log error when filePath is empty', async () => {
             const errorSpy = jest.spyOn(console, 'error').mockImplementation();
 
-            await action.execute({ liveCodeFilePath: '' }, mockComm);
+            await action.execute({ ipynbFilePath: '' }, mockComm);
 
             expect(errorSpy).toHaveBeenCalledWith('File path is not available');
 

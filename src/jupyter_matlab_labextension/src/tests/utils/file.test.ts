@@ -1,3 +1,5 @@
+// Copyright 2026 The MathWorks, Inc.
+
 import { getFileNameForConversion } from '../../utils/file';
 import { showDialog, InputDialog, Dialog } from '@jupyterlab/apputils';
 import { ActionFactory } from '../../plugins/actions/actionFactory';
@@ -24,6 +26,10 @@ jest.mock('@jupyterlab/coreutils', () => ({
             return idx > -1 ? p.slice(idx) : '';
         }),
         join: jest.fn((a, b) => `${a}/${b}`)
+    },
+    PageConfig: {
+        getOption: jest.fn().mockReturnValue('/home/user'),
+        getBaseUrl: jest.fn().mockReturnValue('http://localhost:8888/')
     }
 }));
 
@@ -55,6 +61,17 @@ describe('getFileNameForConversion', () => {
         panel = {
             context: {
                 path: 'notebook.ipynb'
+            },
+            sessionContext: {
+                isReady: true,
+                ready: Promise.resolve(),
+                kernelDisplayName: 'MATLAB Kernel',
+                session: {
+                    kernel: {
+                        id: 'kernel-123',
+                        status: 'idle'
+                    }
+                }
             }
         };
 
@@ -72,11 +89,10 @@ describe('getFileNameForConversion', () => {
 
         const result = await getFileNameForConversion(panel, comm);
 
-        // Prefixing with '/' as per mocked PathExt.join behavior above
-        expect(result).toBe('/notebook.mlx');
+        expect(result).toBe('/home/user/notebook.mlx');
 
         expect(fakeAction.execute).toHaveBeenCalledWith(
-            { liveCodeFilePath: '/notebook.mlx' },
+            { ipynbFilePath: '/home/user/notebook.ipynb' },
             comm
         );
     });
@@ -104,8 +120,7 @@ describe('getFileNameForConversion', () => {
         } as Dialog.IResult<unknown>);
 
         const result = await getFileNameForConversion(panel, comm);
-        // Prefixing with '/' as per mocked PathExt.join behavior above
-        expect(result).toBe('/notebook.mlx');
+        expect(result).toBe('/home/user/notebook.mlx');
     });
 
     it('returns new filename when user enters a new name', async () => {
@@ -125,8 +140,7 @@ describe('getFileNameForConversion', () => {
         } as Dialog.IResult<string>);
 
         const result = await getFileNameForConversion(panel, comm);
-        // Prefixing with '/' as per mocked PathExt.join behavior above
-        expect(result).toBe('/renamed_notebook.mlx');
+        expect(result).toBe('/home/user/renamed_notebook.mlx');
     });
 
     it('returns null when user cancels name input dialog', async () => {

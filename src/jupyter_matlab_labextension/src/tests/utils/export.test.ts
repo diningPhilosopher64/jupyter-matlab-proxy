@@ -14,7 +14,7 @@ import {
     waitForMatlabToStart,
     waitForUserToSignin
 } from '../../utils/matlab';
-import { openMatlabButtonHandler } from '../../utils/commands';
+import { openMatlabInNewTab } from '../../utils/commands';
 import { Notification } from '@jupyterlab/apputils';
 import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 
@@ -49,9 +49,9 @@ const mockedWaitForMatlabToStart = waitForMatlabToStart as jest.MockedFunction<t
 const mockedWaitForUserToSignin = waitForUserToSignin as jest.MockedFunction<typeof waitForUserToSignin>;
 
 jest.mock('../../utils/commands', () => ({
-    openMatlabButtonHandler: jest.fn()
+    openMatlabInNewTab: jest.fn()
 }));
-const mockedOpenMatlabButtonHandler = openMatlabButtonHandler as jest.MockedFunction<typeof openMatlabButtonHandler>;
+const mockedOpenMatlabInNewTab = openMatlabInNewTab as jest.MockedFunction<typeof openMatlabInNewTab>;
 
 jest.mock('@jupyterlab/apputils', () => ({
     Notification: {
@@ -62,8 +62,6 @@ jest.mock('@jupyterlab/apputils', () => ({
 describe('exportHandler', () => {
     let commService: any;
     let panel: any;
-    const targetURL = 'http://localhost:8888/matlab/default/';
-
     beforeEach(() => {
         jest.clearAllMocks();
 
@@ -73,11 +71,14 @@ describe('exportHandler', () => {
 
         panel = {
             id: 'notebook-123',
-            context: { path: 'abc.ipynb' },
+            context: { path: 'abc.ipynb', save: jest.fn().mockResolvedValue(undefined) },
             sessionContext: {
+                isReady: true,
+                ready: Promise.resolve(),
                 kernelDisplayName: 'MATLAB Kernel',
                 session: {
                     kernel: {
+                        id: 'kernel-123',
                         status: 'busy'
                     }
                 }
@@ -86,9 +87,9 @@ describe('exportHandler', () => {
     });
 
     it('logs error when panel is null and returns early', async () => {
-        const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
-        await exportHandler(commService, null, targetURL);
+        await exportHandler(commService, null);
 
         expect(errorSpy).toHaveBeenCalledWith('No active notebook to export');
         expect(commService.getComm).not.toHaveBeenCalled();
@@ -107,7 +108,7 @@ describe('exportHandler', () => {
             matlabRootPath: '/usr/local/MATLAB'
         });
 
-        await exportHandler(commService, panel, targetURL);
+        await exportHandler(commService, panel);
 
         expect(mockedShowMatlabKernelIsBusyDialog).toHaveBeenCalled();
     });
@@ -116,7 +117,7 @@ describe('exportHandler', () => {
         panel.sessionContext.session.kernel.status = 'idle';
         mockedGetFileNameForConversion.mockResolvedValue(null);
 
-        await exportHandler(commService, panel, targetURL);
+        await exportHandler(commService, panel);
 
         expect(mockedStartMatlab).not.toHaveBeenCalled();
         expect(mockedConvertToLiveCode).not.toHaveBeenCalled();
@@ -140,15 +141,15 @@ describe('exportHandler', () => {
             promise: Promise.resolve({})
         } as PromiseDelegate<ReadonlyJSONValue>);
 
-        mockedOpenMatlabButtonHandler.mockReturnValue(fakeWindow);
+        mockedOpenMatlabInNewTab.mockResolvedValue(fakeWindow);
 
         mockedGetFileNameForConversion.mockResolvedValue('file.mlx');
         mockedWaitForMatlabToStart.mockResolvedValue(undefined);
         mockedWaitForUserToSignin.mockResolvedValue(undefined);
 
-        await exportHandler(commService, panel, targetURL);
+        await exportHandler(commService, panel);
 
-        expect(openMatlabButtonHandler).toHaveBeenCalledWith(targetURL);
+        expect(openMatlabInNewTab).toHaveBeenCalled();
         expect(fakeWindow.close).toHaveBeenCalled();
     });
 
@@ -165,11 +166,11 @@ describe('exportHandler', () => {
         });
         mockedWaitForMatlabToStart.mockResolvedValue(undefined);
 
-        await exportHandler(commService, panel, targetURL);
+        await exportHandler(commService, panel);
 
         expect(startMatlab).toHaveBeenCalled();
         expect(waitForMatlabToStart).toHaveBeenCalled();
-        expect(convertToLiveCode).toHaveBeenCalledWith(panel, expect.any(Object), 'file.mlx');
+        expect(convertToLiveCode).toHaveBeenCalledWith(panel, expect.any(Object), expect.any(String), 'file.mlx');
         expect(Notification.info).toHaveBeenCalledWith('File file.mlx ready', { autoClose: 2000 });
     });
 });

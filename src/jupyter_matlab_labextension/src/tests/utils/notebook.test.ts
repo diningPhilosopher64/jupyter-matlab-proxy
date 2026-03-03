@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2026 The MathWorks, Inc.
 
 import { NotebookInfo } from '../../utils/notebook';
 import { PageConfig } from '@jupyterlab/coreutils';
@@ -90,6 +90,11 @@ describe('NotebookInfo', () => {
         it('returns correct getCurrentFilename', async () => {
             await notebookInfo.update(panel);
             expect(notebookInfo.getCurrentFilename()).toBe('notebooks/test.ipynb');
+        });
+
+        it('returns correct getCurrentFileName', async () => {
+            await notebookInfo.update(panel);
+            expect(notebookInfo.getCurrentFileName()).toBe('notebooks/test.ipynb');
         });
 
         it('returns correct getCurrentFilePath', async () => {

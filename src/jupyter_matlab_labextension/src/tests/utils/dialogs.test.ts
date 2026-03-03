@@ -2,7 +2,8 @@
 
 import {
     getNewFileNameDialog,
-    showMatlabKernelIsBusyDialog
+    showMatlabKernelIsBusyDialog,
+    showPopupBlockedDialog
 } from '../../utils/dialogs';
 import { showDialog, InputDialog, Dialog } from '@jupyterlab/apputils';
 
@@ -50,12 +51,12 @@ describe('dialogs module', () => {
                 isChecked: false
             } as Dialog.IResult<unknown>);
 
-            const result = await getNewFileNameDialog('notebook.ipynb', 'notebook.mlx');
+            const result = await getNewFileNameDialog('notebook.ipynb');
 
             expect(result).toBeNull();
             expect(mockedShowDialog).toHaveBeenCalledWith({
-                title: '"notebook.mlx" already exists.',
-                body: 'A file named "notebook.mlx" already exists in the folder. Choose a new name or replace it to overwrite its current contents',
+                title: '"notebook" Live Code file already exists.',
+                body: 'A file named "notebook" Live Code already exists in the folder. Choose a new name or replace it to overwrite its current contents',
                 buttons: expect.any(Array)
             });
         });
@@ -67,7 +68,7 @@ describe('dialogs module', () => {
                 isChecked: false
             } as Dialog.IResult<unknown>);
 
-            const result = await getNewFileNameDialog('notebook.ipynb', 'notebook.mlx');
+            const result = await getNewFileNameDialog('notebook.ipynb');
 
             expect(result).toBe('notebook.mlx');
         });
@@ -85,7 +86,7 @@ describe('dialogs module', () => {
                 isChecked: false
             } as Dialog.IResult<string>);
 
-            const result = await getNewFileNameDialog('notebook.ipynb', 'notebook.mlx');
+            const result = await getNewFileNameDialog('notebook.ipynb');
 
             expect(mockedInputGetText).toHaveBeenCalledWith({
                 title: 'New File Name',
@@ -108,7 +109,7 @@ describe('dialogs module', () => {
                 isChecked: false
             } as Dialog.IResult<string>);
 
-            const result = await getNewFileNameDialog('notebook.ipynb', 'notebook.mlx');
+            const result = await getNewFileNameDialog('notebook.ipynb');
 
             expect(result).toBeNull();
         });
@@ -126,7 +127,7 @@ describe('dialogs module', () => {
                 isChecked: false
             } as Dialog.IResult<string>);
 
-            const result = await getNewFileNameDialog('notebook.ipynb', 'notebook.mlx');
+            const result = await getNewFileNameDialog('notebook.ipynb');
 
             expect(result).toBeNull();
         });
@@ -157,6 +158,34 @@ describe('dialogs module', () => {
             } as Dialog.IResult<unknown>);
 
             await expect(showMatlabKernelIsBusyDialog()).resolves.toBeUndefined();
+        });
+    });
+
+    describe('showPopupBlockedDialog', () => {
+        it('displays popup blocked dialog with correct title and body', async () => {
+            mockedShowDialog.mockResolvedValue({
+                button: { label: 'OK', accept: true } as Dialog.IButton,
+                value: null,
+                isChecked: false
+            } as Dialog.IResult<unknown>);
+
+            await showPopupBlockedDialog();
+
+            expect(mockedShowDialog).toHaveBeenCalledWith({
+                title: 'Pop-up Blocked',
+                body: 'Your browser blocked the MATLAB pop-up window. Please enable pop-ups for this site and try again.',
+                buttons: expect.any(Array)
+            });
+        });
+
+        it('resolves after user clicks OK', async () => {
+            mockedShowDialog.mockResolvedValue({
+                button: { label: 'OK', accept: true } as Dialog.IButton,
+                value: null,
+                isChecked: false
+            } as Dialog.IResult<unknown>);
+
+            await expect(showPopupBlockedDialog()).resolves.toBeUndefined();
         });
     });
 });

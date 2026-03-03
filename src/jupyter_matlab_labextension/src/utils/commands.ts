@@ -1,3 +1,5 @@
+// Copyright 2026 The MathWorks, Inc.
+
 import { startMatlab, waitForMatlabToStart, convertToLiveCodeAndOpenMatlab, waitForUserToSignin } from './matlab';
 import { NotebookPanel } from '@jupyterlab/notebook';
 import { NotebookInfo } from '../utils/notebook';

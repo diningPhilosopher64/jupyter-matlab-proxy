@@ -1,3 +1,5 @@
+// Copyright 2026 The MathWorks, Inc.
+
 import { showDialog, Dialog, InputDialog } from '@jupyterlab/apputils';
 import { PathExt } from '@jupyterlab/coreutils';
 

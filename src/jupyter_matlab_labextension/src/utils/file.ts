@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2026 The MathWorks, Inc.
 
 import { PathExt } from '@jupyterlab/coreutils';
 import { NotebookPanel } from '@jupyterlab/notebook';
@@ -32,8 +32,6 @@ export async function getFileNameForConversion (
             return null; // User neither provided a new file name nor chose to overwrite, so return null
         }
     } else {
-        const ipynbFileName = notebookInfo.getCurrentFileName()!;
-        const liveCodeFileName = ipynbFileName.replace(".ipynb", ".mlx");
-        return PathExt.join(notebookInfo.getCurrentDirectory()!, liveCodeFileName);
+        return ipynbFilePath.replace('.ipynb', '.mlx');
     }
 }

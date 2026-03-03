@@ -1,3 +1,4 @@
+
 import * as matlabModule from '../../utils/matlab';
 import { PageConfig } from '@jupyterlab/coreutils';
 import { ActionFactory } from '../../plugins/actions/actionFactory';
@@ -16,13 +17,13 @@ const {
     convertToLiveCodeAndOpenMatlab,
     openGeneratedFileInEditor,
     convertToLiveCode,
-    waitForUserToSignin,
-    sendConvertRequest
+    waitForUserToSignin
 } = matlabModule;
 
 jest.mock('@jupyterlab/coreutils', () => ({
     PageConfig: {
-        getBaseUrl: jest.fn()
+        getBaseUrl: jest.fn(),
+        getOption: jest.fn()
     }
 }));
 
@@ -53,6 +54,7 @@ const mockWindowOpen = jest.fn();
 (global as any).window = { open: mockWindowOpen };
 
 const mockedGetBaseUrl = PageConfig.getBaseUrl as jest.MockedFunction<typeof PageConfig.getBaseUrl>;
+const mockedGetOption = PageConfig.getOption as jest.MockedFunction<typeof PageConfig.getOption>;
 const mockedCreateAction = ActionFactory.createAction as jest.Mock;
 const mockedMatlabStatusGet = MatlabStatusAction.getStatus as jest.Mock;
 const mockedConvertGetPath = ConvertAction.getGeneratedLiveCodeFilePath as jest.MockedFunction<typeof ConvertAction.getGeneratedLiveCodeFilePath>;
@@ -100,8 +102,7 @@ describe('matlab utils', () => {
 
         expect(mockedCreateAction).toHaveBeenCalledWith(
             ActionTypes.MATLAB_STATUS,
-            true,
-            panel
+            true
         );
         expect(actionInstance.execute).toHaveBeenCalledWith(null, comm);
         expect(result).toBe(fakeStatus);
@@ -133,8 +134,7 @@ describe('matlab utils', () => {
 
         expect(mockedCreateAction).toHaveBeenCalledWith(
             ActionTypes.START_MATLAB_PROXY,
-            true,
-            panel
+            true
         );
         expect(startAction.execute).toHaveBeenCalledWith(null, comm);
         expect(result).toEqual(fakeStatus);
@@ -194,12 +194,11 @@ describe('matlab utils', () => {
         mockedCreateAction.mockReturnValue(convertActionInstance);
         mockedConvertGetPath.mockReturnValue('/home/user/notebook.mlx');
 
-        const result = await convertToLiveCode(panel, comm, '/home/user/notebook.mlx');
+        const result = await convertToLiveCode(panel, comm, '/home/user/notebook.ipynb', '/home/user/notebook.mlx');
 
         expect(mockedCreateAction).toHaveBeenCalledWith(
             ActionTypes.CONVERT,
-            true,
-            panel
+            true
         );
         expect(convertActionInstance.execute).toHaveBeenCalledWith(
             {
@@ -222,8 +221,7 @@ describe('matlab utils', () => {
 
         expect(mockedCreateAction).toHaveBeenCalledWith(
             ActionTypes.EDIT,
-            true,
-            panel
+            true
         );
         expect(editAction.execute).toHaveBeenCalledWith(
             {
@@ -241,6 +239,8 @@ describe('matlab utils', () => {
         beforeEach(() => {
             jest.useFakeTimers();
             mockedGetBaseUrl.mockReturnValue('http://localhost:8888/');
+            mockedGetOption.mockReturnValue('/home/user');
+            mockWindowOpen.mockReturnValue({ closed: false });
         });
 
         afterEach(() => {
@@ -270,7 +270,7 @@ describe('matlab utils', () => {
             await jest.runAllTimersAsync();
             await promise;
 
-            expect(mockedCreateAction).toHaveBeenCalledWith(ActionTypes.CONVERT, true, panel);
+            expect(mockedCreateAction).toHaveBeenCalledWith(ActionTypes.CONVERT, true);
             expect(mockedDisplayOpenMatlab).toHaveBeenCalled();
             expect(editAction.execute).toHaveBeenCalled();
             expect(mockWindowOpen).toHaveBeenCalledWith(
@@ -343,7 +343,7 @@ describe('matlab utils', () => {
             reject: jest.fn()
         };
 
-        await waitForUserToSignin(1, comm, panel, delegate as any, 100);
+        await waitForUserToSignin(1, comm, delegate as any, 100);
 
         expect(statusAction.execute).toHaveBeenCalledTimes(2);
         expect(delegate.resolve).toHaveBeenCalled();
@@ -361,25 +361,8 @@ describe('matlab utils', () => {
             reject: jest.fn()
         };
 
-        await waitForUserToSignin(1, comm, panel, delegate as any, 5);
+        await waitForUserToSignin(1, comm, delegate as any, 5);
 
         expect(delegate.reject).toHaveBeenCalled();
-    });
-
-    // =========================================================
-    // sendConvertRequest
-    // =========================================================
-    it('sendConvertRequest sends action and returns true when comm is valid', () => {
-        const send = jest.fn();
-        const commObj = { isDisposed: false, send };
-
-        const data = { some: 'data' };
-        const result = sendConvertRequest(data, commObj as any);
-
-        expect(result).toBe(true);
-        expect(send).toHaveBeenCalledWith({
-            action: ActionTypes.CONVERT,
-            data
-        });
     });
 });
