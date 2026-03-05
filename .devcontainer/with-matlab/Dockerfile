@@ -85,5 +85,13 @@ RUN wget -q https://www.mathworks.com/mpm/glnxa64/mpm && \
 
 ENV MATHWORKS_SERVICE_HOST_MANAGED_INSTALL_ROOT=${MSH_MANAGED_INSTALL_ROOT}
 
+# Install uv globally for root (and postCreateCommand via sudo)
+RUN curl -LsSf https://astral.sh/uv/install.sh | \
+    UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh
+
+RUN UV_TOOL_BIN_DIR=/usr/local/bin UV_TOOL_DIR=/opt/uv-tools \
+    uv tool install jupyterlab --python ${PYTHON_VERSION} && \
+    chmod -R 755 /opt/uv-tools
+
 USER ubuntu
 WORKDIR /home/ubuntu
