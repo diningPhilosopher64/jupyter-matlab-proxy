@@ -1,6 +1,5 @@
 // Copyright 2026 The MathWorks, Inc.
 
-import { PathExt } from '@jupyterlab/coreutils';
 import { NotebookPanel } from '@jupyterlab/notebook';
 import { ICommunicationChannel } from '../plugins/matlabCommunication';
 import { ActionFactory } from '../plugins/actions/actionFactory';
@@ -8,6 +7,7 @@ import { ActionTypes } from '../plugins/actions/actionTypes';
 import { CheckFileExistsAction } from '../plugins/actions/checkFileExistsAction';
 import { getNewFileNameDialog } from './dialogs';
 import { NotebookInfo } from './notebook';
+import path from 'path';
 
 export async function getFileNameForConversion (
     panel: NotebookPanel,
@@ -27,7 +27,7 @@ export async function getFileNameForConversion (
         const newFileName = await getNewFileNameDialog(notebookInfo.getCurrentFilename()!);
         console.debug('New file name chosen by the user is ', newFileName);
         if (newFileName) {
-            return PathExt.join(notebookInfo.getCurrentDirectory()!, newFileName);
+            return path.join(notebookInfo.getCurrentDirectory()!, newFileName);
         } else {
             return null; // User neither provided a new file name nor chose to overwrite, so return null
         }
