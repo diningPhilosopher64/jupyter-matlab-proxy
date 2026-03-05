@@ -91,7 +91,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | \
 
 RUN UV_TOOL_BIN_DIR=/usr/local/bin UV_TOOL_DIR=/opt/uv-tools \
     uv tool install jupyterlab --python ${PYTHON_VERSION} && \
-    chmod -R 777 /opt/uv-tools
+    chown -R ubuntu:ubuntu /opt/uv-tools
 
 USER ubuntu
 WORKDIR /home/ubuntu
