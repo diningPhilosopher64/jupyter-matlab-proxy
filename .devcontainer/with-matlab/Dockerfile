@@ -89,9 +89,9 @@ RUN echo "Installing MATLAB using MPM..."
 RUN curl -LsSf https://astral.sh/uv/install.sh | \
     UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh
 
-RUN UV_TOOL_BIN_DIR=/usr/local/bin UV_TOOL_DIR=/opt/uv-tools \
+RUN UV_PYTHON_INSTALL_DIR=/opt/uv-python UV_TOOL_BIN_DIR=/usr/local/bin UV_TOOL_DIR=/opt/uv-tools \
     uv tool install jupyterlab --python ${PYTHON_VERSION} && \
-    chown -R ubuntu:ubuntu /opt/uv-tools
+    chown -R ubuntu:ubuntu /opt/uv-tools /opt/uv-python
 
 USER ubuntu
 WORKDIR /home/ubuntu

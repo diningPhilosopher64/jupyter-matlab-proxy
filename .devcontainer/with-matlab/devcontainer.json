@@ -29,6 +29,6 @@
             }
         }
     },
-    "postCreateCommand": "UV_TOOL_BIN_DIR=/usr/local/bin UV_TOOL_DIR=/opt/uv-tools uv tool install jupyterlab --with .devcontainer/with-matlab/jupyter_matlab_proxy-0.17.5-py3-none-any.whl --force",
+    "postCreateCommand": "UV_PYTHON_INSTALL_DIR=/opt/uv-python UV_TOOL_BIN_DIR=/usr/local/bin UV_TOOL_DIR=/opt/uv-tools uv tool install jupyterlab --with .devcontainer/with-matlab/jupyter_matlab_proxy-0.17.5-py3-none-any.whl --force",
     "waitFor": "postCreateCommand"
 }
