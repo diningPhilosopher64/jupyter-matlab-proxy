@@ -48,6 +48,16 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
     export NVM_DIR="/home/ubuntu/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
     nvm install ${NODE_VERSION} 
 
+# Install JupyterLab and jupyter-matlab-proxy into a shared venv
+COPY --chown=ubuntu:ubuntu jupyter_matlab_proxy-0.17.5-py3-none-any.whl /tmp/jupyter_matlab_proxy-0.17.5-py3-none-any.whl
+RUN source ${HOME}/.local/bin/env && \
+    uv venv /home/ubuntu/.jupyter-venv && \
+    source /home/ubuntu/.jupyter-venv/bin/activate && \
+    uv pip install jupyterlab /tmp/jupyter_matlab_proxy-0.17.5-py3-none-any.whl && \
+    rm /tmp/jupyter_matlab_proxy-0.17.5-py3-none-any.whl
+
+ENV PATH="/home/ubuntu/.jupyter-venv/bin:${PATH}"
+
 # Now the matlab-proxy directory can be mounted and tested for build
 
 USER root
@@ -83,15 +93,7 @@ RUN echo "Installing MATLAB using MPM..."
 #     && ./cleanup_default_msh_installation_location.sh --for-all-users \
 #     && cd / && rm -rf /matlab-install ${MSH_DOWNLOAD_LOCATION}
 
-# ENV MATHWORKS_SERVICE_HOST_MANAGED_INSTALL_ROOT=${MSH_MANAGED_INSTALL_ROOT}
-
-# Install uv globally for root (and postCreateCommand via sudo)
-RUN curl -LsSf https://astral.sh/uv/install.sh | \
-    UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh
-
-RUN UV_PYTHON_INSTALL_DIR=/opt/uv-python UV_TOOL_BIN_DIR=/usr/local/bin UV_TOOL_DIR=/opt/uv-tools \
-    uv tool install jupyterlab --python ${PYTHON_VERSION} && \
-    chown -R ubuntu:ubuntu /opt/uv-tools /opt/uv-python
+ENV MATHWORKS_SERVICE_HOST_MANAGED_INSTALL_ROOT=${MSH_MANAGED_INSTALL_ROOT}
 
 USER ubuntu
 WORKDIR /home/ubuntu
