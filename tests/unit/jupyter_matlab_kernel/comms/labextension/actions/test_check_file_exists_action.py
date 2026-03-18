@@ -101,7 +101,7 @@ async def test_execute_returns_file_exists_status(
     # Create test ipynb file and potentially a .mlx or .m file
     ipynb_file = tmp_path / "test_file.ipynb"
     ipynb_file.write_text("{}")
-    
+
     if file_exists:
         mlx_file = tmp_path / "test_file.mlx"
         mlx_file.write_text("% test content")
