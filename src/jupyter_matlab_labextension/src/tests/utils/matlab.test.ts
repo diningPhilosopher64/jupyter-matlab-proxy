@@ -1,3 +1,4 @@
+// Copyright 2026 The MathWorks, Inc.
 
 import * as matlabModule from '../../utils/matlab';
 import { PageConfig } from '@jupyterlab/coreutils';

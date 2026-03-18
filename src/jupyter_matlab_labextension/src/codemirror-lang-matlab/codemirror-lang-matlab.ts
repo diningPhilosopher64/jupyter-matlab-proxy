@@ -1,4 +1,4 @@
-// Copyright 2024-2025 The MathWorks, Inc.
+// Copyright 2024-2026 The MathWorks, Inc.
 
 import { parser } from '../lezer-matlab/dist/index';
 import {
