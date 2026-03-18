@@ -48,16 +48,6 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
     export NVM_DIR="/home/ubuntu/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
     nvm install ${NODE_VERSION} 
 
-# Install JupyterLab and jupyter-matlab-proxy into a shared venv
-COPY --chown=ubuntu:ubuntu jupyter_matlab_proxy-0.17.5-py3-none-any.whl /tmp/jupyter_matlab_proxy-0.17.5-py3-none-any.whl
-RUN source ${HOME}/.local/bin/env && \
-    uv venv /home/ubuntu/.jupyter-venv && \
-    source /home/ubuntu/.jupyter-venv/bin/activate && \
-    uv pip install jupyterlab /tmp/jupyter_matlab_proxy-0.17.5-py3-none-any.whl && \
-    rm /tmp/jupyter_matlab_proxy-0.17.5-py3-none-any.whl
-
-ENV PATH="/home/ubuntu/.jupyter-venv/bin:${PATH}"
-
 # Now the matlab-proxy directory can be mounted and tested for build
 
 USER root
