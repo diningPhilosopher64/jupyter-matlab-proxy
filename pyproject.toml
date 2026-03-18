@@ -133,6 +133,9 @@ asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 filterwarnings = ["ignore::DeprecationWarning", "ignore::RuntimeWarning"]
 
+[tool.black]
+target-version = ["py310", "py311", "py312", "py313"]
+
 [tool.coverage.run]
 source = ["jupyter_matlab_proxy", "jupyter_matlab_kernel"]
 omit = ["**/__main__.py"]
