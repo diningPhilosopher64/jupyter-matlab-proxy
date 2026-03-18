@@ -55,8 +55,8 @@ describe('dialogs module', () => {
 
             expect(result).toBeNull();
             expect(mockedShowDialog).toHaveBeenCalledWith({
-                title: '"notebook" Live Code file already exists.',
-                body: 'A file named "notebook" Live Code already exists in the folder. Choose a new name or replace it to overwrite its current contents',
+                title: '"notebook" Live Script file already exists.',
+                body: 'A file named "notebook" Live Script already exists in the folder. Choose a new name or replace it to overwrite its current contents',
                 buttons: expect.any(Array)
             });
         });
@@ -145,7 +145,7 @@ describe('dialogs module', () => {
 
             expect(mockedShowDialog).toHaveBeenCalledWith({
                 title: 'MATLAB Kernel Busy',
-                body: 'The MATLAB kernel must be idle to open the Notebook as Live Code in MATLAB. Try again when the MATLAB kernel is idle.',
+                body: 'The MATLAB kernel must be idle to open the Notebook as Live Script in MATLAB. Try again when the MATLAB kernel is idle.',
                 buttons: expect.any(Array)
             });
         });

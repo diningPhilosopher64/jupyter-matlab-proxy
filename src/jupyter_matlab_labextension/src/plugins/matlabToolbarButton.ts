@@ -74,7 +74,7 @@ implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
                     });
 
                     this.app.commands.addCommand(getOpenAsLiveCodeMLXInMatlabCommandId(), {
-                        label: 'Open as Live Code in MATLAB',
+                        label: 'Open as Live Script in MATLAB',
                         className: 'openMATLABButton matlab-toolbar-button-spaced',
                         icon: matlabIcon,
                         execute: async () => {

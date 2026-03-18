@@ -14,7 +14,6 @@ export async function exportHandler (
     commService: ICommunicationService,
     panel: NotebookPanel | null
 ): Promise<void> {
-    console.debug('Exporting to live code', panel);
     if (!panel) {
         console.error('No active notebook to export');
         return;

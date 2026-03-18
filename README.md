@@ -206,7 +206,7 @@ Notebooks in JupyterLab also have an `Open MATLAB` drop-down button on the toolb
 Click `Open MATLAB` to open the MATLAB development environment in a new browser tab.
 <img width="300" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/open-as-live-code.png">
 
-Click `Open as Live Code in MATLAB` to open the MATLAB development environment in a new browser tab with the opened IPYNB notebook converted to a Live Code file.
+Click `Open as Live Script in MATLAB` to open the MATLAB development environment in a new browser tab with the opened IPYNB notebook converted to a Live Script file.
 <p><img width="900" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/ipynb-to-livecode-conversion.gif"></p> 
 
 
@@ -232,7 +232,7 @@ This opens an untitled `.m` file where you can write MATLAB code with syntax hig
 
 * This package has limitations. For example, it does not support certain MATLAB commands. For details, see [Limitations](https://github.com/mathworks/jupyter-matlab-proxy/blob/main/Limitations.md).
 
-* The `Open as Live Code in MATLAB` feature does not automatically transfer the outputs in the notebook to the generated Live Code file and will require running the Live Code file again.
+* The `Open as Live Script in MATLAB` feature does not automatically transfer the outputs in the notebook to the generated Live Script file and will require running the Live Script file again.
 
 * To discuss a technical issue or submit an enhancement request, [create a GitHub issue](https://github.com/mathworks/jupyter-matlab-proxy/issues), or send an email to `jupyter-support@mathworks.com`.
 

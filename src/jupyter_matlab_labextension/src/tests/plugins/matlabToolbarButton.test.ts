@@ -191,7 +191,7 @@ describe('matlabToolbarButton', () => {
             expect(app.commands.addCommand).toHaveBeenCalledWith(
                 'matlab:openAsLiveCode',
                 expect.objectContaining({
-                    label: 'Open as Live Code in MATLAB'
+                    label: 'Open as Live Script in MATLAB'
                 })
             );
         });

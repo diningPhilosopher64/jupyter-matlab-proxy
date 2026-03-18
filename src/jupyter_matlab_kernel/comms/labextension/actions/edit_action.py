@@ -142,7 +142,7 @@ class EditAction(ActionCommand):
 
         livecode_filepath = Path(data["liveCodeFilePath"]).expanduser()
         self.log.info(
-            f"Received Live Code file path for opening in the editor: {livecode_filepath}"
+            f"Received Live Script file path for opening in the editor: {livecode_filepath}"
         )
 
         try:

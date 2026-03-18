@@ -23,13 +23,13 @@ class ConvertAction(ActionCommand):
         return f'ipynb2mlx("{ipynb_filepath}","{livecode_filepath}")'
 
     def _get_code_mlx_to_m_conversion(self, mlx_livecode_filepath, m_livecode_filepath):
-        """Fetches code to convert generated .mlx file to live code .m and deletes the .mlx file
+        """Fetches code to convert generated .mlx file to live script .m and deletes the .mlx file
 
         Args:
             mlx_filepath (str): Path to generated .mlx file
 
         Returns:
-            str: MATLAB code which converts .mlx to live code .m and deletes .mlx file
+            str: MATLAB code which converts .mlx to live script .m and deletes .mlx file
         """
 
         return f"editor = matlab.desktop.editor.openDocument('{mlx_livecode_filepath}',Visible=0); editor.Opened; editor.saveAs('{m_livecode_filepath}');editor.closeNoPrompt; clear editor;delete('{mlx_livecode_filepath}');"
@@ -86,11 +86,11 @@ class ConvertAction(ActionCommand):
         ipynb_filepath = Path(data["ipynbFilePath"]).expanduser()
         livecode_filepath = Path(data["liveCodeFilePath"]).expanduser()
         self.log.debug(
-            f"Received IPYNB file path for conversion: {ipynb_filepath}.  Live code file path: {livecode_filepath}"
+            f"Received IPYNB file path for conversion: {ipynb_filepath}.  Live Script file path: {livecode_filepath}"
         )
 
         try:
-            # First convert from .ipynb to live code .mlx
+            # First convert from .ipynb to live script .mlx
             code = self.get_code(ipynb_filepath, livecode_filepath)
 
             # TODO: This eval request to clear console can be removed once the kernel's interrupt_request or related interrupt
@@ -112,18 +112,18 @@ class ConvertAction(ActionCommand):
                     {
                         "action": ActionTypes.CONVERT.value,
                         "liveCodeFilePath": None,
-                        "error": f"Failed to convert from .mlx to live code .m with error: {eval_response['responseStr']}",
+                        "error": f"Failed to convert from .mlx to live script .m with error: {eval_response['responseStr']}",
                     }
                 )
                 return
 
             self.log.debug(
-                f"Successfully generated Live Code file at {str(livecode_filepath)}"
+                f"Successfully generated Live Script file at {str(livecode_filepath)}"
             )
 
             status = await self.kernel.mwi_comm_helper.fetch_matlab_proxy_status()
 
-            # Additionally convert from .mlx to live code .m is required (for 25a or later versions)
+            # Additionally convert from .mlx to live script .m is required (for 25a or later versions)
             if self._is_matlab_version_25a_or_later(status.matlab_version):
                 pwd = Path.cwd()
                 mlx_livecode_filepath, m_livecode_filepath = (
@@ -149,7 +149,7 @@ class ConvertAction(ActionCommand):
                         {
                             "action": ActionTypes.CONVERT.value,
                             "liveCodeFilePath": None,
-                            "error": f"Failed to convert from .mlx to live code .m with error: {eval_response['responseStr']}",
+                            "error": f"Failed to convert from .mlx to live script .m with error: {eval_response['responseStr']}",
                         }
                     )
 
