@@ -34,17 +34,19 @@ class EditAction(ActionCommand):
     async def __wait_for_rootapp_instance_to_be_set(self):
         getinstance_code = "matlab.ui.container.internal.RootApp.getInstance()"
         # Wait for the JSD to start loading before sending the root app instance.
-        # If request is sent too early, any commands executed will have their outputs missing 
+        # If request is sent too early, any commands executed will have their outputs missing
         # TODO:Remove this sleep after the above bug is fixed.
         self.log.debug(f"\n\n Waiting for 5 seconds before sending rootapp request")
         await asyncio.sleep(5)
-        
+
         time_taken, time_out = 0, 30
         # Keep checking if instance is set
         while True:
-            
+
             try:
-                self.log.debug("Waiting for an additional 1 second every time before sending the request")
+                self.log.debug(
+                    "Waiting for an additional 1 second every time before sending the request"
+                )
                 await asyncio.sleep(1)
                 eval_response = (
                     await self.kernel.mwi_comm_helper.send_eval_request_to_matlab(
@@ -65,7 +67,9 @@ class EditAction(ActionCommand):
                         # Sleep for a second to ensure desktop state is confirmed.
                         break
                     else:
-                        self.log.info("\n\nRoot app instance is initializing, retrying...")
+                        self.log.info(
+                            "\n\nRoot app instance is initializing, retrying..."
+                        )
 
             except Exception as err:
                 self.log.error(f"Edit action failed with error: {err}")
@@ -79,7 +83,6 @@ class EditAction(ActionCommand):
                     )
                     self.log.error(err)
                     raise err
-
 
     async def __send_edit_request(self, comm, mlx_file_path):
         # Client type is set on the jsd, now send eval request to open mlx file

@@ -53,13 +53,13 @@ def test_validate_data(check_file_exists_action):
     # Act & Assert
     with pytest.raises(ValueError) as exc_info:
         check_file_exists_action.validate_data({})
-    assert "'liveCodeFilePath' is required" in str(exc_info.value)
+    assert "'ipynbFilePath' is required" in str(exc_info.value)
 
     with pytest.raises(ValueError) as exc_info:
         check_file_exists_action.validate_data({"other_key": "value"})
-    assert "'liveCodeFilePath' is required" in str(exc_info.value)
+    assert "'ipynbFilePath' is required" in str(exc_info.value)
 
-    check_file_exists_action.validate_data({"liveCodeFilePath": "/path/to/file"})
+    check_file_exists_action.validate_data({"ipynbFilePath": "/path/to/file.ipynb"})
 
 
 @pytest.mark.asyncio
@@ -67,13 +67,13 @@ def test_validate_data(check_file_exists_action):
     "data",
     [
         pytest.param({}, id="missing_path"),
-        pytest.param({"liveCodeFilePath": ""}, id="empty_path"),
+        pytest.param({"ipynbFilePath": ""}, id="empty_path"),
     ],
 )
 async def test_execute_sends_error_for_invalid_path(
     check_file_exists_action, mock_comm, data
 ):
-    """Test that execute sends error response for invalid liveCodeFilePath."""
+    """Test that execute sends error response for invalid ipynbFilePath."""
     # Act
     await check_file_exists_action.execute(mock_comm, data)
 
@@ -98,11 +98,15 @@ async def test_execute_returns_file_exists_status(
 ):
     """Test that execute returns correct exists status and logs debug message."""
     # Arrange
-    test_file = tmp_path / "test_file.m"
+    # Create test ipynb file and potentially a .mlx or .m file
+    ipynb_file = tmp_path / "test_file.ipynb"
+    ipynb_file.write_text("{}")
+    
     if file_exists:
-        test_file.write_text("% test content")
+        mlx_file = tmp_path / "test_file.mlx"
+        mlx_file.write_text("% test content")
 
-    data = {"liveCodeFilePath": str(test_file)}
+    data = {"ipynbFilePath": str(ipynb_file)}
 
     # Act
     await check_file_exists_action.execute(mock_comm, data)
@@ -117,32 +121,27 @@ async def test_execute_returns_file_exists_status(
 
 
 @pytest.mark.asyncio
-async def test_execute_handles_tilde_expansion(
-    check_file_exists_action, mock_comm, mocker
+async def test_execute_handles_file_existence_check(
+    check_file_exists_action, mock_comm, mocker, tmp_path
 ):
-    """Test that execute properly expands ~ in file paths."""
+    """Test that execute properly checks for .mlx or .m files."""
     # Arrange
-    mock_path = mocker.MagicMock(spec=Path)
-    mock_expanded = mocker.MagicMock()
-    mock_resolved = mocker.MagicMock()
-    mock_path.expanduser.return_value = mock_expanded
-    mock_expanded.resolve.return_value = mock_resolved
-    mock_resolved.exists.return_value = True
+    ipynb_file = tmp_path / "test_file.ipynb"
+    ipynb_file.write_text("{}")
+    mlx_file = tmp_path / "test_file.mlx"
+    mlx_file.write_text("% test")
 
-    mocker.patch(
-        "jupyter_matlab_kernel.comms.labextension.actions.check_file_exists_action.Path",
-        return_value=mock_path,
-    )
-
-    data = {"liveCodeFilePath": "~/test_file.m"}
+    data = {"ipynbFilePath": str(ipynb_file)}
 
     # Act
     await check_file_exists_action.execute(mock_comm, data)
 
     # Assert
-    mock_path.expanduser.assert_called_once()
-    mock_expanded.resolve.assert_called_once()
-    mock_resolved.exists.assert_called_once()
+    mock_comm.send.assert_called_once()
+    call_args = mock_comm.send.call_args[0][0]
+    assert call_args["action"] == ActionTypes.CHECK_FILE_EXISTS.value
+    assert call_args["exists"] is True
+    assert call_args["error"] is None
 
 
 @pytest.mark.asyncio

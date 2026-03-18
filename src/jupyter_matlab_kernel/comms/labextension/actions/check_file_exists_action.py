@@ -37,7 +37,6 @@ class CheckFileExistsAction(ActionCommand):
             )
             return
 
-
         ipynb_filepath = data.get("ipynbFilePath", "")
 
         self.log.debug(f"File to check if it exists: {ipynb_filepath}")
@@ -55,11 +54,15 @@ class CheckFileExistsAction(ActionCommand):
 
         else:
             ipynb_filepath = Path(ipynb_filepath)
-            livecode_mlx_filepath = ipynb_filepath.parent / (ipynb_filepath.stem + ".mlx")
+            livecode_mlx_filepath = ipynb_filepath.parent / (
+                ipynb_filepath.stem + ".mlx"
+            )
             livecode_m_filepath = ipynb_filepath.parent / (ipynb_filepath.stem + ".m")
             exists = livecode_mlx_filepath.exists() or livecode_m_filepath.exists()
 
-            self.log.debug(f'LiveCode file at {livecode_mlx_filepath} or {livecode_m_filepath} exists: {exists}')
+            self.log.debug(
+                f"LiveCode file at {livecode_mlx_filepath} or {livecode_m_filepath} exists: {exists}"
+            )
 
             comm.send(
                 {
@@ -68,4 +71,3 @@ class CheckFileExistsAction(ActionCommand):
                     "error": None,
                 }
             )
-            

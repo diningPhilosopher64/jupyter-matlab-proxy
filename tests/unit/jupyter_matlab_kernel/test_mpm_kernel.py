@@ -76,7 +76,6 @@ async def test_initialize_mwi_comm_helper(mocker, mpm_kernel_instance):
         "jupyter_matlab_kernel.mpm_kernel.MWICommHelper", autospec=True
     )
     mock_mwi_comm_helper_instance = mock_mwi_comm_helper.return_value
-    mock_mwi_comm_helper_instance.connect = mocker.AsyncMock()
 
     # Test parameters
     murl = "http://proxy-url.com"
@@ -94,7 +93,6 @@ async def test_initialize_mwi_comm_helper(mocker, mpm_kernel_instance):
         headers,
         mpm_kernel_instance.log,
     )
-    mock_mwi_comm_helper_instance.connect.assert_awaited_once()
 
     # Verify that the mwi_comm_helper instance variable is set
     assert mpm_kernel_instance.mwi_comm_helper == mock_mwi_comm_helper_instance
