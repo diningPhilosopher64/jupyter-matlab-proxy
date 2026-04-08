@@ -8,7 +8,6 @@ import { ICommunicationChannel } from '../matlabCommunication';
 import { isCommValid } from './actionUtils';
 
 export class EditAction extends BaseAction {
-    blocking: boolean;
     private static blockingPromise: PromiseDelegate<ReadonlyJSONValue> | null;
 
     constructor (blocking: boolean) {

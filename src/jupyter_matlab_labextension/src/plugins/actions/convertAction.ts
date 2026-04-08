@@ -8,7 +8,6 @@ import { displayConversionNotification } from '../../utils/notifications';
 import { isCommValid } from './actionUtils';
 
 export class ConvertAction extends BaseAction {
-    blocking: boolean;
     private static liveCodeFilePath: string;
     private static blockingPromise: PromiseDelegate<ReadonlyJSONValue> | null;
 

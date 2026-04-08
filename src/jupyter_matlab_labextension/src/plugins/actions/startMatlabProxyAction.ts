@@ -8,7 +8,6 @@ import { ActionTypes } from './actionTypes';
 import { isCommValid } from './actionUtils';
 
 export class StartMatlabProxyAction extends BaseAction {
-    blocking: boolean;
     private static blockingPromise: PromiseDelegate<ReadonlyJSONValue> | null;
 
     constructor (blocking: boolean) {

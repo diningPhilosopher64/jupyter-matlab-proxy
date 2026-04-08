@@ -23,7 +23,7 @@ export async function exportHandler (
     await panel.context.save();
 
     if (notebookInfo.isBusy()) {
-        showMatlabKernelIsBusyDialog();
+        await showMatlabKernelIsBusyDialog();
         return;
     }
     const comm = await commService.getComm(panel.id);
@@ -58,6 +58,6 @@ export async function exportHandler (
     }
 
     await waitForMatlabToStart(1000, comm, panel);
-    await convertToLiveCode(panel, comm, notebookInfo.getCurrentFilePath()!, finalMlxFilePath);
-    Notification.info(`File ${finalMlxFilePath} ready`, { autoClose: 2000 });
+    const livecodeFilePath = await convertToLiveCode(panel, comm, notebookInfo.getCurrentFilePath()!, finalMlxFilePath);
+    Notification.info(`File ${livecodeFilePath} ready`, { autoClose: 2000 });
 }

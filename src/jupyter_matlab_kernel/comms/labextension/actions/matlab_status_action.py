@@ -8,12 +8,6 @@ class MatlabStatusAction(ActionCommand):
         self.kernel = kernel
         self.log = kernel.log
 
-    def get_code(self):
-        pass
-
-    def validate_data(self, data):
-        pass
-
     async def execute(self, comm, _):
         try:
             self.log.debug("Fetching MATLAB proxy status...")

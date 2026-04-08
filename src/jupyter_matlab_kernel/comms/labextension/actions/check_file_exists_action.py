@@ -9,9 +9,6 @@ class CheckFileExistsAction(ActionCommand):
         self.kernel = kernel
         self.log = kernel.log
 
-    def get_code(self):
-        pass
-
     def validate_data(self, data):
         if "ipynbFilePath" not in data:
             raise ValueError(

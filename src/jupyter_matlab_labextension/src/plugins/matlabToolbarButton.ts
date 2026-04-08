@@ -85,7 +85,7 @@ implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
                             }
                             // Save the notebook and then begin conversion.
                             await currentPanel.context.save();
-                            openAsLiveCodeInMatlabButtonHandler(currentPanel, this.commService);
+                            await openAsLiveCodeInMatlabButtonHandler(currentPanel, this.commService);
                         }
                     });
 

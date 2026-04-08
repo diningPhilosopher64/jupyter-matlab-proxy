@@ -7,9 +7,11 @@ import { ICommunicationChannel } from '../../../plugins/matlabCommunication';
 describe('EditAction', () => {
     let action: EditAction;
     let mockComm: ICommunicationChannel;
+    let debugSpy: jest.SpyInstance;
 
     beforeEach(() => {
         jest.clearAllMocks();
+        debugSpy = jest.spyOn(console, 'debug').mockImplementation();
         action = new EditAction(false);
         mockComm = {
             commId: 'test-comm-id',
@@ -21,6 +23,10 @@ describe('EditAction', () => {
             onMsg: null,
             onClose: null
         } as unknown as ICommunicationChannel;
+    });
+
+    afterEach(() => {
+        debugSpy.mockRestore();
     });
 
     describe('constructor', () => {
@@ -105,9 +111,11 @@ describe('EditAction', () => {
         });
 
         it('should reject blocking promise on error', async () => {
+            const errorSpy = jest.spyOn(console, 'error').mockImplementation();
             await action.execute({ liveCodeFilePath: '/path/to/file.mlx' }, mockComm);
 
             expect(() => action.onMsg({ error: 'Some error' }, mockComm)).not.toThrow();
+            errorSpy.mockRestore();
         });
     });
 });

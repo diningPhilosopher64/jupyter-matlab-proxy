@@ -8,12 +8,6 @@ class StartMatlabProxyAction(ActionCommand):
         self.kernel = kernel
         self.log = kernel.log
 
-    def get_code(self):
-        pass
-
-    def validate_data(self, data):
-        pass
-
     async def execute(self, comm, _):
         """Starts MATLAB proxy
         Args:

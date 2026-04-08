@@ -8,7 +8,6 @@ import { ActionTypes } from './actionTypes';
 import { isCommValid } from './actionUtils';
 
 export class CheckFileExistsAction extends BaseAction {
-    blocking: boolean;
     private static blockingPromise: PromiseDelegate<ReadonlyJSONValue> | null;
     private static fileExists: boolean = false;
 

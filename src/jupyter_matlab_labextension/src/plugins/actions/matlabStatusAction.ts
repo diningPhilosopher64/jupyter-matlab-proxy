@@ -18,7 +18,6 @@ export type MATLABStatus = {
 
 export class MatlabStatusAction extends BaseAction {
     private static status: MATLABStatus;
-    blocking: boolean;
     private static blockingPromise: PromiseDelegate<ReadonlyJSONValue> | null;
 
     constructor (blocking: boolean) {
