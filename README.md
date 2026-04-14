@@ -204,10 +204,10 @@ Notebooks in JupyterLab also have an `Open MATLAB` drop-down button on the toolb
 <img width="300" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/open-matlab-button.png">
 
 Click `Open MATLAB` to open the MATLAB development environment in a new browser tab.
-<img width="300" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/open-as-live-code.png">
+<img width="300" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/open-as-live-script.png">
 
 Click `Open as Live Script in MATLAB` to open the MATLAB development environment in a new browser tab with the opened IPYNB notebook converted to a Live Script file.
-<p><img width="900" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/ipynb-to-livecode-conversion.gif"></p> 
+<p><img width="900" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/ipynb-to-live-script-conversion.gif"></p> 
 
 
 When you use the package for the first time, enter your MATLAB license information in the dialog box that appears. See [Licensing](https://github.com/mathworks/matlab-proxy/blob/main/MATLAB-Licensing-Info.md) for details.

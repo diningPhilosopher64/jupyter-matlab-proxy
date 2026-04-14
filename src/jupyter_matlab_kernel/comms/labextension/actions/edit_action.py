@@ -63,7 +63,7 @@ class EditAction(ActionCommand):
                     if self.__check_if_rootapp_instance_is_set(
                         eval_response["responseStr"]
                     ):
-                        self.log.info("Rootapp instance is set is in use")
+                        self.log.debug("Rootapp instance is set is in use")
                         # Sleep for a second to ensure desktop state is confirmed.
                         break
                     else:
@@ -103,7 +103,7 @@ class EditAction(ActionCommand):
 
         else:
             comm.send({"action": ActionTypes.EDIT.value, "error": None})
-            self.log.info("Edit action successful")
+            self.log.debug("Edit action successful")
 
     def validate_data(self, data):
         if "liveCodeFilePath" not in data:
