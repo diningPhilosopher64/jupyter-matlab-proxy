@@ -8,7 +8,7 @@ class MatlabStatusAction(ActionCommand):
         self.kernel = kernel
         self.log = kernel.log
 
-    async def execute(self, comm, _):
+    async def execute(self, comm, data):
         try:
             self.log.debug("Fetching MATLAB proxy status...")
             status = await self.kernel.mwi_comm_helper.fetch_matlab_proxy_status()

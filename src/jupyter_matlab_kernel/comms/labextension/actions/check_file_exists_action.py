@@ -23,13 +23,13 @@ class CheckFileExistsAction(ActionCommand):
         try:
             self.validate_data(data)
 
-        except Exception as err:
-            self.log.error(f"CheckFileExists action failed with error: {err}")
+        except ValueError as ve:
+            self.log.error(f"CheckFileExists action validation failed with error: {ve}")
             comm.send(
                 {
-                    "action": ActionTypes.CHECK_FILE_EXISTS.value,
-                    "exists": False,
-                    "error": str(err),
+                    'action': ActionTypes.CHECK_FILE_EXISTS.value,
+                    'exists': False,
+                    'error': str(ve),
                 }
             )
             return
@@ -39,13 +39,13 @@ class CheckFileExistsAction(ActionCommand):
         self.log.debug(f"File to check if it exists: {ipynb_filepath}")
 
         if not ipynb_filepath:
-            error = Exception("No file path provided for checking if it exists")
-            self.log.error(str(error))
+            error_msg = "No file path provided for checking if it exists"
+            self.log.error(error_msg)
             comm.send(
                 {
                     "action": ActionTypes.CHECK_FILE_EXISTS.value,
                     "exists": False,
-                    "error": str(error),
+                    "error": error_msg,
                 }
             )
 

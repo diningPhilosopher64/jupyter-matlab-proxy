@@ -8,7 +8,7 @@ class StartMatlabProxyAction(ActionCommand):
         self.kernel = kernel
         self.log = kernel.log
 
-    async def execute(self, comm, _):
+    async def execute(self, comm, data):
         """Starts MATLAB proxy
         Args:
             comm (ipykernel.comm.Comm): IPYKernels' Commuincation object
