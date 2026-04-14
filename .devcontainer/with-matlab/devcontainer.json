@@ -29,6 +29,6 @@
             }
         }
     },
-    "postCreateCommand": "uv venv --clear",
+    "postCreateCommand": "uv venv --clear && . .venv/bin/activate && uv pip install . jupyterlab --cache-dir ./__uvcache__",
     "waitFor": "postCreateCommand"
 }
