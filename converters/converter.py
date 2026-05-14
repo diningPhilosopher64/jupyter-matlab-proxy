@@ -24,13 +24,13 @@ def _contains_html(text):
     return bool(re.search(r"<html[\s>]", text, re.IGNORECASE))
 
 
-_PLACEHOLDER_TEXT = "Rerun this cell to see output"
+_PLACEHOLDER_TEXT = "Please rerun this cell to see output"
 
 
 def _placeholder_output():
     return {
-        "dataType": "text",
-        "outputData": {"text": _PLACEHOLDER_TEXT, "truncated": False},
+        "dataType": "warning",
+        "outputData": {"text": _PLACEHOLDER_TEXT},
     }
 
 
