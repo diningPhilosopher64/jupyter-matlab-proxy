@@ -89,6 +89,17 @@ def classify_output(output, compute_dimensions=False):
                     "outputData": {"text": text_plain, "truncated": False},
                 }
 
+        if "text/latex" in data:
+            latex = data["text/latex"]
+            if isinstance(latex, list):
+                latex = "".join(latex)
+            latex = latex.strip().strip("$")
+            name, _, value = latex.partition(" =")
+            return {
+                "dataType": "symbolic",
+                "outputData": {"name": name, "value": value},
+            }
+
         if "image/png" in data:
             png_b64 = data["image/png"]
             if isinstance(png_b64, list):
@@ -107,7 +118,7 @@ def classify_output(output, compute_dimensions=False):
         if "text/html" in data:
             return _placeholder_output()
 
-    return None
+    return _placeholder_output()
 
 
 def serialize_json(obj):
