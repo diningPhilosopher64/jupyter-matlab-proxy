@@ -1,7 +1,9 @@
 """Convert Jupyter notebook (.ipynb) with MATLAB kernel to rich m format (.m)."""
 
+import base64
 import json
 import re
+import struct
 import sys
 import uuid
 
@@ -32,7 +34,15 @@ def _placeholder_output():
     }
 
 
-def classify_output(output):
+def compute_png_dimensions(b64_data):
+    """Decode PNG base64 data and return (width, height)."""
+    raw = base64.b64decode(b64_data)
+    width = struct.unpack(">I", raw[16:20])[0]
+    height = struct.unpack(">I", raw[20:24])[0]
+    return width, height
+
+
+def classify_output(output, compute_dimensions=False):
     """Classify an ipynb output into a rich m dataType and extract data."""
     output_type = output["output_type"]
 
@@ -64,10 +74,6 @@ def classify_output(output):
             if _contains_html(text_plain):
                 return _placeholder_output()
 
-            if "image/png" in data:
-                # Phase 2 - skip for now
-                return None
-
             match = re.match(r"^(\w+)\s*=\s*(.+)$", text_plain.strip())
             if match:
                 return {
@@ -82,6 +88,21 @@ def classify_output(output):
                     "dataType": "text",
                     "outputData": {"text": text_plain, "truncated": False},
                 }
+
+        if "image/png" in data:
+            png_b64 = data["image/png"]
+            if isinstance(png_b64, list):
+                png_b64 = "".join(png_b64)
+            png_b64 = png_b64.strip()
+            output_data = {"dataUri": f"data:image/png;base64,{png_b64}"}
+            if compute_dimensions:
+                width, height = compute_png_dimensions(png_b64)
+                output_data["height"] = height
+                output_data["width"] = width
+            return {
+                "dataType": "image",
+                "outputData": output_data,
+            }
 
         if "text/html" in data:
             return _placeholder_output()
