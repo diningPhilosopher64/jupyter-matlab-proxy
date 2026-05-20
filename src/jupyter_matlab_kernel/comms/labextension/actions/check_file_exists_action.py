@@ -27,9 +27,9 @@ class CheckFileExistsAction(ActionCommand):
             self.log.error(f"CheckFileExists action validation failed with error: {ve}")
             comm.send(
                 {
-                    'action': ActionTypes.CHECK_FILE_EXISTS.value,
-                    'exists': False,
-                    'error': str(ve),
+                    "action": ActionTypes.CHECK_FILE_EXISTS.value,
+                    "exists": False,
+                    "error": str(ve),
                 }
             )
             return

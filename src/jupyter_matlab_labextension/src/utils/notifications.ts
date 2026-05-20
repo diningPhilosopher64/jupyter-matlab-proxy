@@ -52,6 +52,13 @@ export function displayOpenMatlabNotification () : void {
     Notification.info('Opening MATLAB...', { autoClose: 2000 });
 }
 
+export function displayUnsupportedMatlabVersionNotification (): void {
+    Notification.error(
+        'Conversion to Live Script requires MATLAB R2025a or later.',
+        { autoClose: 5000 }
+    );
+}
+
 export function displayConversionNotification (
     timeoutInMS: number = 50000) : PromiseDelegate<ReadonlyJSONValue> {
     const conversionPromise = new PromiseDelegate<ReadonlyJSONValue>();

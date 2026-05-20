@@ -4,7 +4,7 @@ import { PromiseDelegate, ReadonlyJSONValue } from '@lumino/coreutils';
 import { ICommunicationChannel } from '../matlabCommunication';
 import { BaseAction } from './baseAction';
 import { ActionTypes } from './actionTypes';
-import { displayConversionNotification } from '../../utils/notifications';
+import { displayConversionNotification, displayUnsupportedMatlabVersionNotification } from '../../utils/notifications';
 import { isCommValid } from './actionUtils';
 
 export class ConvertAction extends BaseAction {
@@ -53,6 +53,11 @@ export class ConvertAction extends BaseAction {
         // Update data only if there are no errors
         if ('error' in data && data.error) {
             console.error('Received error from kernel ', data.error);
+
+            if (String(data.error).includes('MATLABVersionUnsupportedForConversionError')) {
+                displayUnsupportedMatlabVersionNotification();
+            }
+
             if (ConvertAction.blockingPromise) {
                 ConvertAction.blockingPromise.reject(new Error(data.error));
                 ConvertAction.blockingPromise = null;

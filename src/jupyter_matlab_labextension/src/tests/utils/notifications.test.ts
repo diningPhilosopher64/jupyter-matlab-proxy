@@ -4,6 +4,7 @@ import {
     displayUserSigninNotification,
     displayStartingMatlabNotification,
     displayOpenMatlabNotification,
+    displayUnsupportedMatlabVersionNotification,
     displayConversionNotification
 } from '../../utils/notifications';
 import { Notification } from '@jupyterlab/apputils';
@@ -12,12 +13,14 @@ import { PromiseDelegate } from '@lumino/coreutils';
 jest.mock('@jupyterlab/apputils', () => ({
     Notification: {
         promise: jest.fn(),
-        info: jest.fn()
+        info: jest.fn(),
+        error: jest.fn()
     }
 }));
 
 const mockedNotificationPromise = Notification.promise as jest.MockedFunction<typeof Notification.promise>;
 const mockedNotificationInfo = Notification.info as jest.MockedFunction<typeof Notification.info>;
+const mockedNotificationError = Notification.error as jest.MockedFunction<typeof Notification.error>;
 
 describe('notifications module', () => {
     beforeEach(() => {
@@ -100,6 +103,17 @@ describe('notifications module', () => {
             expect(mockedNotificationInfo).toHaveBeenCalledWith(
                 'Opening MATLAB...',
                 { autoClose: 2000 }
+            );
+        });
+    });
+
+    describe('displayUnsupportedMatlabVersionNotification', () => {
+        it('calls Notification.error with correct message and autoClose', () => {
+            displayUnsupportedMatlabVersionNotification();
+
+            expect(mockedNotificationError).toHaveBeenCalledWith(
+                'Conversion to Live Script requires MATLAB R2025a or later.',
+                { autoClose: 5000 }
             );
         });
     });

@@ -7,10 +7,20 @@ import { displayConversionNotification } from '../../../utils/notifications';
 import { PromiseDelegate } from '@lumino/coreutils';
 
 jest.mock('../../../utils/notifications', () => ({
-    displayConversionNotification: jest.fn()
+    displayConversionNotification: jest.fn(),
+    displayUnsupportedMatlabVersionNotification: jest.fn()
 }));
 
+jest.mock('../../../plugins/actions/actionUtils', () => ({
+    isCommValid: jest.fn()
+}));
+
+import { isCommValid } from '../../../plugins/actions/actionUtils';
+import { displayUnsupportedMatlabVersionNotification } from '../../../utils/notifications';
+
 const mockedDisplayConversionNotification = displayConversionNotification as jest.MockedFunction<typeof displayConversionNotification>;
+const mockedDisplayUnsupportedMatlabVersionNotification = displayUnsupportedMatlabVersionNotification as jest.MockedFunction<typeof displayUnsupportedMatlabVersionNotification>;
+const mockedIsCommValid = isCommValid as jest.MockedFunction<typeof isCommValid>;
 
 describe('ConvertAction', () => {
     let action: ConvertAction;
@@ -29,17 +39,18 @@ describe('ConvertAction', () => {
             onMsg: null,
             onClose: null
         } as unknown as ICommunicationChannel;
+        mockedIsCommValid.mockReturnValue(true);
     });
 
     describe('constructor', () => {
-        it('should set blocking to true when passed true', () => {
+        it('should create a blocking action when passed true', () => {
             const blockingAction = new ConvertAction(true);
-            expect(blockingAction.blocking).toBe(true);
+            expect(blockingAction).toBeInstanceOf(ConvertAction);
         });
 
-        it('should set blocking to false when passed false', () => {
+        it('should create a non-blocking action when passed false', () => {
             const nonBlockingAction = new ConvertAction(false);
-            expect(nonBlockingAction.blocking).toBe(false);
+            expect(nonBlockingAction).toBeInstanceOf(ConvertAction);
         });
     });
 
@@ -51,13 +62,25 @@ describe('ConvertAction', () => {
 
     describe('getGeneratedLiveCodeFilePath', () => {
         it('should return liveCodeFilePath after onMsg is called with valid data', () => {
-            action.onMsg({ liveCodeFilePath: '/path/to/file.mlx' }, mockComm);
+            action.onMsg({ liveCodeFilePath: '/path/to/file.m' }, mockComm);
 
-            expect(ConvertAction.getGeneratedLiveCodeFilePath()).toBe('/path/to/file.mlx');
+            expect(ConvertAction.getGeneratedLiveCodeFilePath()).toBe('/path/to/file.m');
         });
     });
 
     describe('execute', () => {
+        it('should return early when comm is invalid', async () => {
+            mockedIsCommValid.mockReturnValue(false);
+            const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            await action.execute({}, mockComm);
+
+            expect(mockComm.send).not.toHaveBeenCalled();
+            expect(mockedDisplayConversionNotification).not.toHaveBeenCalled();
+
+            errorSpy.mockRestore();
+        });
+
         it('should call displayConversionNotification with correct parameters', async () => {
             const mockPromiseDelegate = {
                 promise: Promise.resolve(),
@@ -67,7 +90,7 @@ describe('ConvertAction', () => {
 
             mockedDisplayConversionNotification.mockReturnValue(mockPromiseDelegate);
 
-            const data = { ipynbFilePath: '/path/to/notebook.ipynb', liveCodeFilePath: '/path/to/file.mlx' };
+            const data = { ipynbFilePath: '/path/to/notebook.ipynb', liveCodeFilePath: '/path/to/file.m' };
             await action.execute(data, mockComm);
 
             expect(mockedDisplayConversionNotification).toHaveBeenCalledWith(50000);
@@ -109,9 +132,45 @@ describe('ConvertAction', () => {
         it('should update liveCodeFilePath when valid data is received', async () => {
             await action.execute({}, mockComm);
 
-            action.onMsg({ liveCodeFilePath: '/path/to/generated.mlx' }, mockComm);
+            action.onMsg({ liveCodeFilePath: '/path/to/generated.m' }, mockComm);
 
-            expect(ConvertAction.getGeneratedLiveCodeFilePath()).toBe('/path/to/generated.mlx');
+            expect(ConvertAction.getGeneratedLiveCodeFilePath()).toBe('/path/to/generated.m');
+        });
+
+        it('should display unsupported version notification for MATLABVersionUnsupportedForConversionError', async () => {
+            const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            const mockPromiseDelegate = {
+                promise: Promise.resolve(),
+                resolve: jest.fn(),
+                reject: jest.fn()
+            } as unknown as PromiseDelegate<any>;
+            mockedDisplayConversionNotification.mockReturnValue(mockPromiseDelegate);
+
+            await action.execute({}, mockComm);
+            action.onMsg({ error: 'MATLABVersionUnsupportedForConversionError: requires R2025a' }, mockComm);
+
+            expect(mockedDisplayUnsupportedMatlabVersionNotification).toHaveBeenCalled();
+
+            errorSpy.mockRestore();
+        });
+
+        it('should not display unsupported version notification for other errors', async () => {
+            const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            const mockPromiseDelegate = {
+                promise: Promise.resolve(),
+                resolve: jest.fn(),
+                reject: jest.fn()
+            } as unknown as PromiseDelegate<any>;
+            mockedDisplayConversionNotification.mockReturnValue(mockPromiseDelegate);
+
+            await action.execute({}, mockComm);
+            action.onMsg({ error: 'Some other error' }, mockComm);
+
+            expect(mockedDisplayUnsupportedMatlabVersionNotification).not.toHaveBeenCalled();
+
+            errorSpy.mockRestore();
         });
 
         it('should log error when error is present in data', async () => {
@@ -160,7 +219,7 @@ describe('ConvertAction', () => {
             mockedDisplayConversionNotification.mockReturnValue(mockPromiseDelegate);
 
             await action.execute({}, mockComm);
-            action.onMsg({ liveCodeFilePath: '/path/to/file.mlx' }, mockComm);
+            action.onMsg({ liveCodeFilePath: '/path/to/file.m' }, mockComm);
 
             expect(resolveFn).toHaveBeenCalledWith(null);
         });

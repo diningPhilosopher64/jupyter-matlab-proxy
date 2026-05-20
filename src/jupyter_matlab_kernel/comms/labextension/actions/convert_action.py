@@ -5,9 +5,7 @@ from pathlib import Path
 import base64
 import json
 import re
-import struct
 import uuid
-
 
 _PLACEHOLDER_TEXT = "Please rerun this cell to see output"
 
@@ -16,30 +14,6 @@ class ConvertAction(ActionCommand):
     def __init__(self, kernel):
         self.kernel = kernel
         self.log = kernel.log
-
-    def get_code(self, ipynb_filepath, livecode_filepath):
-        """Fetches code specific to Convert action.
-
-        Args:
-            ipynb_file_path (str): IPYNB file path  to be converted.
-            mlx_file_path (str): MLX file path where the converted file will be generated.
-
-        Returns:
-            str: MATLAB code which converts the IPYNB file to MLX file.
-        """
-        return f'ipynb2mlx("{ipynb_filepath}","{livecode_filepath}")'
-
-    def _get_code_mlx_to_m_conversion(self, mlx_livecode_filepath, m_livecode_filepath):
-        """Fetches code to convert generated .mlx file to live script .m and deletes the .mlx file
-
-        Args:
-            mlx_filepath (str): Path to generated .mlx file
-
-        Returns:
-            str: MATLAB code which converts .mlx to live script .m and deletes .mlx file
-        """
-
-        return f"editor = matlab.desktop.editor.openDocument('{mlx_livecode_filepath}',Visible=0); editor.Opened; editor.saveAs('{m_livecode_filepath}');editor.closeNoPrompt; clear editor;delete('{mlx_livecode_filepath}');"
 
     def _is_matlab_version_25a_or_later(self, version) -> bool:
         """Checks if MATLAB version is 25a or later"""
@@ -78,13 +52,15 @@ class ConvertAction(ActionCommand):
             "outputData": {"text": _PLACEHOLDER_TEXT},
         }
 
-    def _compute_png_dimensions(self, b64_data):
-        raw = base64.b64decode(b64_data)
-        width = struct.unpack(">I", raw[16:20])[0]
-        height = struct.unpack(">I", raw[20:24])[0]
-        return width, height
+    def _split_source_lines(self, source):
+        lines = source.split("\n")
+        if lines and lines[-1] == "":
+            lines = lines[:-1]
+        if not lines:
+            lines = [""]
+        return lines
 
-    def _classify_output(self, output, compute_dimensions=False):
+    def _classify_output(self, output):
         output_type = output["output_type"]
 
         if output_type == "stream":
@@ -146,14 +122,9 @@ class ConvertAction(ActionCommand):
                 if isinstance(png_b64, list):
                     png_b64 = "".join(png_b64)
                 png_b64 = png_b64.strip()
-                output_data = {"dataUri": f"data:image/png;base64,{png_b64}"}
-                if compute_dimensions:
-                    width, height = self._compute_png_dimensions(png_b64)
-                    output_data["height"] = height
-                    output_data["width"] = width
                 return {
                     "dataType": "image",
-                    "outputData": output_data,
+                    "outputData": {"dataUri": f"data:image/png;base64,{png_b64}"},
                 }
 
             if "text/html" in data:
@@ -161,10 +132,27 @@ class ConvertAction(ActionCommand):
 
         return self._placeholder_output()
 
+    def _build_appendix(self, outputs_data):
+        lines = []
+        lines.append("")
+        lines.append('%[appendix]{"version":"1.0"}')
+        lines.append("%---")
+        lines.append("%[metadata:view]")
+        lines.append('%   data: {"layout":"inline"}')
+
+        for oid, data_dict in outputs_data:
+            lines.append("%---")
+            lines.append(f"%[output:{oid}]")
+            lines.append(f"%   data: {self._serialize_json(data_dict)}")
+
+        lines.append("%---")
+        lines.append("")
+        return lines
+
     def _serialize_json(self, obj):
         return json.dumps(obj, separators=(",", ":")).replace("/", "\\/")
 
-    def _convert_notebook(self, notebook, include_outputs=False):
+    def _convert_notebook(self, notebook):
         cells = notebook["cells"]
 
         body_lines = []
@@ -177,22 +165,16 @@ class ConvertAction(ActionCommand):
                 source = self._get_cell_source(cell)
 
                 output_ids = []
-                if include_outputs:
-                    cell_outputs = cell.get("outputs", [])
+                cell_outputs = cell.get("outputs", [])
 
-                    for output in cell_outputs:
-                        classified = self._classify_output(output)
-                        if classified is not None:
-                            oid = self._generate_output_id()
-                            output_ids.append(oid)
-                            outputs_data.append((oid, classified))
+                for output in cell_outputs:
+                    classified = self._classify_output(output)
+                    if classified is not None:
+                        oid = self._generate_output_id()
+                        output_ids.append(oid)
+                        outputs_data.append((oid, classified))
 
-                source_lines = source.split("\n")
-                if source_lines and source_lines[-1] == "":
-                    source_lines = source_lines[:-1]
-
-                if not source_lines:
-                    source_lines = [""]
+                source_lines = self._split_source_lines(source)
 
                 if output_ids:
                     markers = " ".join(f"%[output:{oid}]" for oid in output_ids)
@@ -200,7 +182,7 @@ class ConvertAction(ActionCommand):
 
                 body_lines.extend(source_lines)
 
-            elif cell_type == "markdown":
+            elif cell_type in ("markdown", "raw"):
                 source = self._get_cell_source(cell)
                 for line in source.split("\n"):
                     body_lines.append(f"%[text] {line}")
@@ -208,41 +190,24 @@ class ConvertAction(ActionCommand):
             if cell_idx < len(cells) - 1:
                 body_lines.append("%%")
 
-        appendix_lines = []
-        appendix_lines.append("")
-        appendix_lines.append('%[appendix]{"version":"1.0"}')
-        appendix_lines.append("%---")
-        appendix_lines.append("%[metadata:view]")
-        appendix_lines.append('%   data: {"layout":"onright"}')
-
-        if include_outputs:
-            for oid, data_dict in outputs_data:
-                appendix_lines.append("%---")
-                appendix_lines.append(f"%[output:{oid}]")
-                appendix_lines.append(f"%   data: {self._serialize_json(data_dict)}")
-
-        appendix_lines.append("%---")
-        appendix_lines.append("")
+        appendix_lines = self._build_appendix(outputs_data)
 
         return "\n".join(body_lines + appendix_lines)
 
-    def convert(self, input_path, output_path, include_outputs=False):
+    def _convert(self, input_path, output_path):
         """Convert a Jupyter notebook (.ipynb) to rich m format (.m).
 
         Args:
             input_path: Path to the input .ipynb file.
             output_path: Path to write the output .m file.
-            include_outputs: Whether to include cell outputs in the conversion.
         """
         with open(input_path, "r") as f:
             notebook = json.load(f)
 
-        result = self._convert_notebook(notebook, include_outputs)
+        result = self._convert_notebook(notebook)
 
         with open(output_path, "w") as f:
             f.write(result)
-
-    # --- End rich .m conversion methods ---
 
     def validate_data(self, data):
         if "ipynbFilePath" not in data or "liveCodeFilePath" not in data:
@@ -285,70 +250,37 @@ class ConvertAction(ActionCommand):
         try:
             status = await self.kernel.mwi_comm_helper.fetch_matlab_proxy_status()
 
-            if self._is_matlab_version_25a_or_later(status.matlab_version):
-                # Use Python-based converter directly (ipynb → rich .m)
-                pwd = Path.cwd()
-                m_livecode_filepath = pwd / livecode_filepath.with_suffix(".m")
-
-                self.convert(
-                    str(ipynb_filepath),
-                    str(m_livecode_filepath),
-                    include_outputs=True,
-                )
-
-                self.log.debug(
-                    f"Successfully converted {ipynb_filepath} to rich .m at {m_livecode_filepath}"
-                )
-
+            if not self._is_matlab_version_25a_or_later(status.matlab_version):
+                error_msg = f"MATLABVersionUnsupportedForConversionError: Conversion to Live Script .m requires MATLAB R2025a or later. Current version: {status.matlab_version}"
+                self.log.error(error_msg)
                 comm.send(
                     {
                         "action": ActionTypes.CONVERT.value,
-                        "liveCodeFilePath": str(m_livecode_filepath),
-                        "error": None,
+                        "liveCodeFilePath": None,
+                        "error": error_msg,
                     }
                 )
+                return
 
-            else:
-                # Use MATLAB-based conversion (ipynb → mlx)
-                code = self.get_code(ipynb_filepath, livecode_filepath)
+            pwd = Path.cwd()
+            m_livecode_filepath = pwd / livecode_filepath.with_suffix(".m")
 
-                # TODO: This eval request to clear console can be removed once the kernel's interrupt_request or related interrupt
-                # infrastructure is enhanced to handle stack output of a recent interrupt request. Until then, always send a clc; before
-                # conversion to ensure any previous interrupt stack output is cleared from the console.
-                _ = await self.kernel.mwi_comm_helper.send_eval_request_to_matlab(
-                    "clc;"
-                )
+            self._convert(
+                str(ipynb_filepath),
+                str(m_livecode_filepath),
+            )
 
-                eval_response = (
-                    await self.kernel.mwi_comm_helper.send_eval_request_to_matlab(code)
-                )
+            self.log.debug(
+                f"Successfully converted {ipynb_filepath} to rich .m at {m_livecode_filepath}"
+            )
 
-                self.log.debug(f"Convert action eval response: {eval_response}")
-
-                if eval_response["isError"]:
-                    self.log.error(
-                        f"Failed to convert file with error:{eval_response['responseStr']}"
-                    )
-                    comm.send(
-                        {
-                            "action": ActionTypes.CONVERT.value,
-                            "liveCodeFilePath": None,
-                            "error": f"Failed to convert .ipynb to .mlx with error: {eval_response['responseStr']}",
-                        }
-                    )
-                    return
-
-                self.log.debug(
-                    f"Successfully generated Live Script file at {str(livecode_filepath)}"
-                )
-
-                comm.send(
-                    {
-                        "action": ActionTypes.CONVERT.value,
-                        "liveCodeFilePath": str(livecode_filepath),
-                        "error": None,
-                    }
-                )
+            comm.send(
+                {
+                    "action": ActionTypes.CONVERT.value,
+                    "liveCodeFilePath": str(m_livecode_filepath),
+                    "error": None,
+                }
+            )
 
         except Exception as err:
             self.log.error(f"Convert action failed with error: {err}")

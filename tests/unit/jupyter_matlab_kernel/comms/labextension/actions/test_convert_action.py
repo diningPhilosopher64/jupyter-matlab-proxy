@@ -1,5 +1,9 @@
 # Copyright 2026 The MathWorks, Inc.
 
+import base64
+import json
+from unittest.mock import MagicMock
+
 import pytest
 from pathlib import Path
 from jupyter_matlab_kernel.comms.labextension.actions import ConvertAction
@@ -27,6 +31,11 @@ def convert_action(mock_kernel):
     return ConvertAction(mock_kernel)
 
 
+def _make_png_b64():
+    """Create a minimal base64 PNG string for testing."""
+    return base64.b64encode(b"\x89PNG\r\n\x1a\n" + b"\x00" * 20).decode()
+
+
 def test_init_sets_kernel_and_log(mock_kernel):
     """Test that initialization sets kernel and log attributes."""
     # Act
@@ -35,29 +44,6 @@ def test_init_sets_kernel_and_log(mock_kernel):
     # Assert
     assert action.kernel is mock_kernel
     assert action.log is mock_kernel.log
-
-
-def test_get_code_returns_ipynb2mlx_command(convert_action):
-    """Test that get_code returns correct MATLAB command."""
-    # Act
-    result = convert_action.get_code("/path/to/file.ipynb", "/path/to/file.mlx")
-
-    # Assert
-    assert result == 'ipynb2mlx("/path/to/file.ipynb","/path/to/file.mlx")'
-
-
-def test_get_code_mlx_to_m_conversion(convert_action):
-    """Test that _get_code_mlx_to_m_conversion returns correct MATLAB command."""
-    # Act
-    result = convert_action._get_code_mlx_to_m_conversion(
-        "/path/to/file.mlx", "/path/to/file.m"
-    )
-
-    # Assert
-    assert "matlab.desktop.editor.openDocument" in result
-    assert "/path/to/file.mlx" in result
-    assert "/path/to/file.m" in result
-    assert "saveAs" in result
 
 
 @pytest.mark.parametrize(
@@ -92,13 +78,13 @@ def test_validate_data(convert_action):
     assert "liveCodeFilePath" in str(exc_info.value)
 
     with pytest.raises(ValueError) as exc_info:
-        convert_action.validate_data({"liveCodeFilePath": "/path/to/file.mlx"})
+        convert_action.validate_data({"liveCodeFilePath": "/path/to/file.m"})
     assert "ipynbFilePath" in str(exc_info.value)
 
     convert_action.validate_data(
         {
             "ipynbFilePath": "/path/to/file.ipynb",
-            "liveCodeFilePath": "/path/to/file.mlx",
+            "liveCodeFilePath": "/path/to/file.m",
         }
     )
 
@@ -119,19 +105,24 @@ async def test_execute_sends_error_on_validation_failure(convert_action, mock_co
 
 
 @pytest.mark.asyncio
-async def test_execute_converts_successfully_pre_25a(convert_action, mock_comm, mocker):
-    """Test successful conversion for MATLAB versions before 25a."""
+async def test_execute_rejects_pre_25a_version(
+    convert_action, mock_comm, mock_kernel, monkeypatch
+):
+    """Test that execute sends unsupported version error for MATLAB < R2025a."""
     # Arrange
-    mock_status = mocker.MagicMock()
+    mock_status = MagicMock()
     mock_status.matlab_version = "R2024b"
-    convert_action.kernel.mwi_comm_helper.fetch_matlab_proxy_status = mocker.AsyncMock(
-        return_value=mock_status
-    )
-    convert_action.kernel.mwi_comm_helper.send_eval_request_to_matlab = (
-        mocker.AsyncMock(return_value={"isError": False, "responseStr": ""})
+
+    async def _fetch_status():
+        return mock_status
+
+    monkeypatch.setattr(
+        mock_kernel.mwi_comm_helper,
+        "fetch_matlab_proxy_status",
+        _fetch_status,
     )
 
-    data = {"ipynbFilePath": "~/notebook.ipynb", "liveCodeFilePath": "notebook.mlx"}
+    data = {"ipynbFilePath": "~/notebook.ipynb", "liveCodeFilePath": "notebook.m"}
 
     # Act
     await convert_action.execute(mock_comm, data)
@@ -140,26 +131,38 @@ async def test_execute_converts_successfully_pre_25a(convert_action, mock_comm, 
     mock_comm.send.assert_called_once()
     call_args = mock_comm.send.call_args[0][0]
     assert call_args["action"] == ActionTypes.CONVERT.value
-    assert call_args["error"] is None
-    assert "notebook.mlx" in call_args["liveCodeFilePath"]
+    assert call_args["liveCodeFilePath"] is None
+    assert "MATLABVersionUnsupportedForConversionError" in call_args["error"]
 
 
 @pytest.mark.asyncio
 async def test_execute_converts_successfully_25a_or_later(
-    convert_action, mock_comm, mocker
+    convert_action, mock_comm, mock_kernel, monkeypatch, tmp_path
 ):
-    """Test successful conversion for MATLAB 25a or later with mlx to m conversion."""
+    """Test successful conversion for MATLAB R2025a or later."""
     # Arrange
-    mock_status = mocker.MagicMock()
+    mock_status = MagicMock()
     mock_status.matlab_version = "R2025a"
-    convert_action.kernel.mwi_comm_helper.fetch_matlab_proxy_status = mocker.AsyncMock(
-        return_value=mock_status
-    )
-    convert_action.kernel.mwi_comm_helper.send_eval_request_to_matlab = (
-        mocker.AsyncMock(return_value={"isError": False, "responseStr": ""})
+
+    async def _fetch_status():
+        return mock_status
+
+    monkeypatch.setattr(
+        mock_kernel.mwi_comm_helper,
+        "fetch_matlab_proxy_status",
+        _fetch_status,
     )
 
-    data = {"ipynbFilePath": "~/notebook.ipynb", "liveCodeFilePath": "notebook.mlx"}
+    notebook = {"cells": [{"cell_type": "code", "source": "x = 1;", "outputs": []}]}
+    input_path = tmp_path / "notebook.ipynb"
+    input_path.write_text(json.dumps(notebook))
+
+    data = {
+        "ipynbFilePath": str(input_path),
+        "liveCodeFilePath": "notebook.m",
+    }
+
+    monkeypatch.setattr(Path, "cwd", staticmethod(lambda: tmp_path))
 
     # Act
     await convert_action.execute(mock_comm, data)
@@ -171,47 +174,28 @@ async def test_execute_converts_successfully_25a_or_later(
     assert call_args["error"] is None
     assert call_args["liveCodeFilePath"].endswith(".m")
 
-
-@pytest.mark.asyncio
-async def test_execute_sends_error_on_eval_failure(convert_action, mock_comm, mocker):
-    """Test that execute sends error when MATLAB eval fails."""
-    # Arrange
-    convert_action.kernel.mwi_comm_helper.send_eval_request_to_matlab = (
-        mocker.AsyncMock(
-            side_effect=[
-                {"isError": False, "responseStr": ""},  # clc response
-                {
-                    "isError": True,
-                    "responseStr": "Conversion failed",
-                    "response_str": "Conversion failed",
-                },
-            ]
-        )
-    )
-
-    data = {"ipynbFilePath": "~/notebook.ipynb", "liveCodeFilePath": "notebook.mlx"}
-
-    # Act
-    await convert_action.execute(mock_comm, data)
-
-    # Assert
-    mock_comm.send.assert_called_once()
-    call_args = mock_comm.send.call_args[0][0]
-    assert call_args["action"] == ActionTypes.CONVERT.value
-    assert call_args["liveCodeFilePath"] is None
-    assert call_args["error"] is not None
+    output_file = Path(call_args["liveCodeFilePath"])
+    assert output_file.exists()
+    content = output_file.read_text()
+    assert "x = 1;" in content
 
 
 @pytest.mark.asyncio
-async def test_execute_sends_error_on_exception(convert_action, mock_comm, mocker):
+async def test_execute_sends_error_on_exception(convert_action, mock_comm, monkeypatch):
     """Test that execute sends error response when exception occurs."""
     # Arrange
     error_message = "Connection failed"
-    convert_action.kernel.mwi_comm_helper.send_eval_request_to_matlab = (
-        mocker.AsyncMock(side_effect=Exception(error_message))
+
+    async def _raise(*args, **kwargs):
+        raise Exception(error_message)
+
+    monkeypatch.setattr(
+        convert_action.kernel.mwi_comm_helper,
+        "fetch_matlab_proxy_status",
+        _raise,
     )
 
-    data = {"ipynbFilePath": "~/notebook.ipynb", "liveCodeFilePath": "notebook.mlx"}
+    data = {"ipynbFilePath": "~/notebook.ipynb", "liveCodeFilePath": "notebook.m"}
 
     # Act
     await convert_action.execute(mock_comm, data)
@@ -223,3 +207,520 @@ async def test_execute_sends_error_on_exception(convert_action, mock_comm, mocke
     assert call_args["liveCodeFilePath"] is None
     assert call_args["error"] == error_message
     convert_action.log.error.assert_called()
+
+
+@pytest.mark.parametrize(
+    "source,expected",
+    [
+        pytest.param("x = 1;\n", "x = 1;\n", id="string_source"),
+        pytest.param(["x = 1;\n", "y = 2;\n"], "x = 1;\ny = 2;\n", id="list_source"),
+    ],
+)
+def test_get_cell_source(convert_action, source, expected):
+    """Test that cell source is returned correctly for string and list inputs."""
+    # Arrange
+    cell = {"source": source}
+
+    # Act
+    result = convert_action._get_cell_source(cell)
+
+    # Assert
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        pytest.param("<html>", True, id="html_lowercase"),
+        pytest.param("<HTML >", True, id="html_uppercase"),
+        pytest.param("prefix <html> suffix", True, id="html_embedded"),
+        pytest.param("plain text", False, id="plain_text"),
+        pytest.param("<p>not html tag</p>", False, id="other_tag"),
+    ],
+)
+def test_contains_html(convert_action, text, expected):
+    """Test HTML detection for various inputs."""
+    # Act & Assert
+    assert convert_action._contains_html(text) is expected
+
+
+def test_placeholder_output(convert_action):
+    """Test that placeholder output has warning dataType."""
+    # Act
+    result = convert_action._placeholder_output()
+
+    # Assert
+    assert result["dataType"] == "warning"
+    assert result["outputData"]["text"] == "Please rerun this cell to see output"
+
+
+@pytest.mark.parametrize(
+    "output,expected_data_type",
+    [
+        pytest.param(
+            {"output_type": "stream", "name": "stdout", "text": "ans = 42\n"},
+            "text",
+            id="stream_stdout",
+        ),
+        pytest.param(
+            {"output_type": "stream", "name": "stdout", "text": ["ans", " = 42\n"]},
+            "text",
+            id="stream_stdout_list",
+        ),
+        pytest.param(
+            {
+                "output_type": "stream",
+                "name": "stderr",
+                "text": "Error using plot\nNot enough input arguments.",
+            },
+            "error",
+            id="stream_stderr",
+        ),
+        pytest.param(
+            {"output_type": "execute_result", "data": {"text/plain": "x = 42"}},
+            "textualVariable",
+            id="text_plain_variable",
+        ),
+        pytest.param(
+            {
+                "output_type": "execute_result",
+                "data": {"text/plain": "   1   2   3\n   4   5   6"},
+            },
+            "text",
+            id="text_plain_non_variable",
+        ),
+        pytest.param(
+            {
+                "output_type": "execute_result",
+                "data": {"text/plain": "<html><body>table</body></html>"},
+            },
+            "warning",
+            id="text_plain_with_html",
+        ),
+        pytest.param(
+            {
+                "output_type": "execute_result",
+                "data": {"text/plain": ["result = ", "3.14"]},
+            },
+            "textualVariable",
+            id="text_plain_list",
+        ),
+        pytest.param(
+            {"output_type": "execute_result", "data": {"text/latex": "$x = y + 1$"}},
+            "symbolic",
+            id="latex",
+        ),
+        pytest.param(
+            {
+                "output_type": "execute_result",
+                "data": {"text/latex": ["$f", " = x^2 + 1$"]},
+            },
+            "symbolic",
+            id="latex_list",
+        ),
+        pytest.param(
+            {
+                "output_type": "execute_result",
+                "data": {"text/html": "<div class='table'>data</div>"},
+            },
+            "warning",
+            id="text_html",
+        ),
+        pytest.param(
+            {"output_type": "display_data", "data": {"text/plain": "val = 10"}},
+            "textualVariable",
+            id="display_data",
+        ),
+        pytest.param(
+            {"output_type": "unknown_type"},
+            "warning",
+            id="unknown_type",
+        ),
+    ],
+)
+def test_classify_output(convert_action, output, expected_data_type):
+    """Test that various output types are classified correctly."""
+    # Act
+    result = convert_action._classify_output(output)
+
+    # Assert
+    assert result["dataType"] == expected_data_type
+
+
+def test_classify_output_stream_stdout_text_content(convert_action):
+    """Test that stdout stream output contains correct text and truncated flag."""
+    # Arrange
+    output = {"output_type": "stream", "name": "stdout", "text": "ans = 42\n"}
+
+    # Act
+    result = convert_action._classify_output(output)
+
+    # Assert
+    assert result["outputData"]["text"] == "ans = 42\n"
+    assert result["outputData"]["truncated"] is False
+
+
+def test_classify_output_stream_stderr_content(convert_action):
+    """Test that stderr stream output contains errorType and text."""
+    # Arrange
+    output = {
+        "output_type": "stream",
+        "name": "stderr",
+        "text": "Error using plot\nNot enough input arguments.",
+    }
+
+    # Act
+    result = convert_action._classify_output(output)
+
+    # Assert
+    assert result["outputData"]["errorType"] == "runtime"
+    assert (
+        result["outputData"]["text"] == "Error using plot\nNot enough input arguments."
+    )
+
+
+def test_classify_output_variable_content(convert_action):
+    """Test that textualVariable output contains correct name and value."""
+    # Arrange
+    output = {
+        "output_type": "execute_result",
+        "data": {"text/plain": "x = 42"},
+    }
+
+    # Act
+    result = convert_action._classify_output(output)
+
+    # Assert
+    assert result["outputData"]["name"] == "x"
+    assert result["outputData"]["value"] == "42"
+
+
+def test_classify_output_latex_content(convert_action):
+    """Test that symbolic output contains correct name and value."""
+    # Arrange
+    output = {
+        "output_type": "execute_result",
+        "data": {"text/latex": "$x = y + 1$"},
+    }
+
+    # Act
+    result = convert_action._classify_output(output)
+
+    # Assert
+    assert result["outputData"]["name"] == "x"
+    assert result["outputData"]["value"] == " y + 1"
+
+
+def test_classify_output_image_png(convert_action):
+    """Test that image/png output contains dataUri."""
+    # Arrange
+    b64_data = _make_png_b64()
+    output = {
+        "output_type": "execute_result",
+        "data": {"image/png": b64_data},
+    }
+
+    # Act
+    result = convert_action._classify_output(output)
+
+    # Assert
+    assert result["dataType"] == "image"
+    assert result["outputData"]["dataUri"].startswith("data:image/png;base64,")
+
+
+def test_classify_output_image_png_list(convert_action):
+    """Test that image/png as list is joined before classification."""
+    # Arrange
+    b64_data = _make_png_b64()
+    half = len(b64_data) // 2
+    output = {
+        "output_type": "execute_result",
+        "data": {"image/png": [b64_data[:half], b64_data[half:]]},
+    }
+
+    # Act
+    result = convert_action._classify_output(output)
+
+    # Assert
+    assert result["dataType"] == "image"
+
+
+@pytest.mark.parametrize(
+    "obj,assertion",
+    [
+        pytest.param(
+            {"dataType": "text", "outputData": {"text": "path/to/file"}},
+            lambda r: "path\\/to\\/file" in r,
+            id="escapes_slashes",
+        ),
+        pytest.param(
+            {"dataType": "text", "outputData": {"text": "ans = 5", "truncated": False}},
+            lambda r: ": " not in r and ", " not in r,
+            id="compact_no_spaces",
+        ),
+    ],
+)
+def test_serialize_json(convert_action, obj, assertion):
+    """Test that JSON serialization is compact with escaped slashes."""
+    # Act
+    result = convert_action._serialize_json(obj)
+
+    # Assert
+    assert assertion(result)
+
+
+def test_convert_notebook_code_cell_without_outputs(convert_action):
+    """Test converting a notebook with a code cell and no outputs."""
+    # Arrange
+    notebook = {"cells": [{"cell_type": "code", "source": "x = 1;\n", "outputs": []}]}
+
+    # Act
+    result = convert_action._convert_notebook(notebook)
+
+    # Assert
+    assert "x = 1;" in result
+    assert "%[output:" not in result
+    assert '%[appendix]{"version":"1.0"}' in result
+
+
+def test_convert_notebook_markdown_cell(convert_action):
+    """Test that markdown cells are prefixed with %[text]."""
+    # Arrange
+    notebook = {"cells": [{"cell_type": "markdown", "source": "# Title\nSome text"}]}
+
+    # Act
+    result = convert_action._convert_notebook(notebook)
+
+    # Assert
+    assert "%[text] # Title" in result
+    assert "%[text] Some text" in result
+
+
+def test_convert_notebook_raw_cell(convert_action):
+    """Test that raw cells are converted to %[text] lines."""
+    # Arrange
+    notebook = {
+        "cells": [{"cell_type": "raw", "source": "\\pagebreak\nsome raw content"}]
+    }
+
+    # Act
+    result = convert_action._convert_notebook(notebook)
+
+    # Assert
+    assert "%[text] \\pagebreak" in result
+    assert "%[text] some raw content" in result
+
+
+def test_convert_notebook_multiple_cells_section_break(convert_action):
+    """Test that multiple cells are separated by %% section breaks."""
+    # Arrange
+    notebook = {
+        "cells": [
+            {"cell_type": "code", "source": "a = 1;", "outputs": []},
+            {"cell_type": "code", "source": "b = 2;", "outputs": []},
+        ]
+    }
+
+    # Act
+    result = convert_action._convert_notebook(notebook)
+
+    # Assert
+    lines = result.split("\n")
+    assert "%%" in lines
+
+
+def test_convert_notebook_code_cell_with_outputs(convert_action):
+    """Test that outputs are included in appendix."""
+    # Arrange
+    notebook = {
+        "cells": [
+            {
+                "cell_type": "code",
+                "source": "disp('hi')",
+                "outputs": [
+                    {
+                        "output_type": "stream",
+                        "name": "stdout",
+                        "text": "hi\n",
+                    }
+                ],
+            }
+        ]
+    }
+
+    # Act
+    result = convert_action._convert_notebook(notebook)
+
+    # Assert
+    assert "%[output:" in result
+    assert "%---" in result
+
+
+def test_convert_notebook_code_cell_source_list(convert_action):
+    """Test that code cell source as list is joined."""
+    # Arrange
+    notebook = {
+        "cells": [{"cell_type": "code", "source": ["a = ", "1;"], "outputs": []}]
+    }
+
+    # Act
+    result = convert_action._convert_notebook(notebook)
+
+    # Assert
+    assert "a = 1;" in result
+
+
+def test_convert_notebook_empty_code_cell(convert_action):
+    """Test that empty code cell still produces valid output."""
+    # Arrange
+    notebook = {"cells": [{"cell_type": "code", "source": "", "outputs": []}]}
+
+    # Act
+    result = convert_action._convert_notebook(notebook)
+
+    # Assert
+    assert '%[appendix]{"version":"1.0"}' in result
+
+
+def test_convert_notebook_appendix_metadata(convert_action):
+    """Test that appendix includes metadata view section."""
+    # Arrange
+    notebook = {"cells": [{"cell_type": "code", "source": "x=1", "outputs": []}]}
+
+    # Act
+    result = convert_action._convert_notebook(notebook)
+
+    # Assert
+    assert "%[metadata:view]" in result
+    assert '{"layout":"inline"}' in result
+
+
+def test_convert_notebook_trailing_newline_stripped(convert_action):
+    """Test that trailing newline is stripped from code cell source."""
+    # Arrange
+    notebook = {"cells": [{"cell_type": "code", "source": "x = 1;\n", "outputs": []}]}
+
+    # Act
+    result = convert_action._convert_notebook(notebook)
+
+    # Assert
+    body = result.split("\n%[appendix]")[0]
+    assert body.strip() == "x = 1;"
+
+
+def test_convert_reads_ipynb_and_writes_m_file(convert_action, tmp_path):
+    """Test that _convert reads an ipynb file and writes a .m file."""
+    # Arrange
+    notebook = {"cells": [{"cell_type": "code", "source": "x = 1;", "outputs": []}]}
+    input_path = tmp_path / "test.ipynb"
+    output_path = tmp_path / "test.m"
+    input_path.write_text(json.dumps(notebook))
+
+    # Act
+    convert_action._convert(str(input_path), str(output_path))
+
+    # Assert
+    assert output_path.exists()
+    content = output_path.read_text()
+    assert "x = 1;" in content
+    assert '%[appendix]{"version":"1.0"}' in content
+
+
+def test_convert_with_outputs_included(convert_action, tmp_path):
+    """Test that _convert includes outputs in the generated file."""
+    # Arrange
+    notebook = {
+        "cells": [
+            {
+                "cell_type": "code",
+                "source": "disp('hello')",
+                "outputs": [
+                    {
+                        "output_type": "stream",
+                        "name": "stdout",
+                        "text": "hello\n",
+                    }
+                ],
+            }
+        ]
+    }
+    input_path = tmp_path / "test.ipynb"
+    output_path = tmp_path / "test.m"
+    input_path.write_text(json.dumps(notebook))
+
+    # Act
+    convert_action._convert(str(input_path), str(output_path))
+
+    # Assert
+    content = output_path.read_text()
+    assert "%[output:" in content
+
+
+def test_generate_output_id_format(convert_action):
+    """Test that generated output ID is an 8-character hex string."""
+    # Act
+    oid = convert_action._generate_output_id()
+
+    # Assert
+    assert len(oid) == 8
+    assert int(oid, 16) is not None
+
+
+def test_generate_output_id_unique(convert_action):
+    """Test that generated output IDs are unique."""
+    # Act
+    ids = [convert_action._generate_output_id() for _ in range(100)]
+
+    # Assert
+    assert len(set(ids)) == 100
+
+
+@pytest.mark.parametrize(
+    "source,expected",
+    [
+        pytest.param("x = 1;\n", ["x = 1;"], id="strips_trailing_newline"),
+        pytest.param("a = 1;\nb = 2;", ["a = 1;", "b = 2;"], id="multiline"),
+        pytest.param("", [""], id="empty_string"),
+        pytest.param("x = 1;", ["x = 1;"], id="no_trailing_newline"),
+    ],
+)
+def test_split_source_lines(convert_action, source, expected):
+    """Test that source is split into lines with trailing empty line removed."""
+    # Act
+    result = convert_action._split_source_lines(source)
+
+    # Assert
+    assert result == expected
+
+
+def test_build_appendix_no_outputs(convert_action):
+    """Test that appendix contains header and metadata when there are no outputs."""
+    # Act
+    result = convert_action._build_appendix([])
+
+    # Assert
+    joined = "\n".join(result)
+    assert '%[appendix]{"version":"1.0"}' in joined
+    assert "%[metadata:view]" in joined
+    assert '{"layout":"inline"}' in joined
+    assert "%[output:" not in joined
+
+
+def test_build_appendix_with_outputs(convert_action):
+    """Test that appendix includes output sections for each output entry."""
+    # Arrange
+    outputs_data = [
+        (
+            "abc12345",
+            {"dataType": "text", "outputData": {"text": "ans = 1", "truncated": False}},
+        ),
+    ]
+
+    # Act
+    result = convert_action._build_appendix(outputs_data)
+
+    # Assert
+    joined = "\n".join(result)
+    assert "%[output:abc12345]" in joined
+    assert "%   data:" in joined
+    assert '"dataType":"text"' in joined
