@@ -189,6 +189,8 @@ class ConvertAction(ActionCommand):
         for cell_idx, cell in enumerate(cells):
             cell_type = cell["cell_type"]
 
+            # Process code cells by adding source lines directly and collecting outputs to be
+            # added in the appendix, with references in the source as %[output:outputId]
             if cell_type == "code":
                 source = self._get_cell_source(cell)
 
@@ -210,12 +212,15 @@ class ConvertAction(ActionCommand):
 
                 body_lines.extend(source_lines)
 
+            # Process markdown and raw cells by prefixing each line with %[text] and escaping markdown syntax
             elif cell_type in ("markdown", "raw"):
                 source = self._get_cell_source(cell)
                 for line in source.split("\n"):
                     line = self._escape_markdown_syntax(line)
                     body_lines.append(f"%[text] {line}")
 
+            # Add section break '%%' between cells, except
+            # after the last cell(to avoid unnecessary section break at the end of the file)
             if cell_idx < len(cells) - 1:
                 body_lines.append("%%")
 
