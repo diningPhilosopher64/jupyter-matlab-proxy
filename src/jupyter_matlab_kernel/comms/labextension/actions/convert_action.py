@@ -46,6 +46,34 @@ class ConvertAction(ActionCommand):
     def _contains_html(self, text):
         return bool(re.search(r"<html[\s>]", text, re.IGNORECASE))
 
+    def _escape_html_tags(self, text):
+        """Escape < and > in HTML tags. e.g. <div> -> \\<div\\>"""
+        return re.sub(
+            r"(</?[a-zA-Z][^>]*>)",
+            lambda m: m.group(0).replace("<", "\\<").replace(">", "\\>"),
+            text,
+        )
+
+    def _escape_markdown_syntax(self, text):
+        """Escape markdown syntax that conflicts with MATLAB's rich .m format.
+
+        Handles:
+          - HTML tags: <tag> -> \\<tag\\>
+          - Horizontal rules: --- -> \\---
+          - Block quotes: > text -> \\> text
+        """
+        # Escape HTML tags first
+        text = self._escape_html_tags(text)
+
+        # Escape horizontal rules (three or more dashes on their own line)
+        if re.match(r"^-{3,}$", text.strip()):
+            text = "\\" + text
+
+        # Escape block quotes (lines starting with "> ", possibly after whitespace)
+        text = re.sub(r"^(\s*)>", r"\1\\>", text)
+
+        return text
+
     def _placeholder_output(self):
         return {
             "dataType": "warning",
@@ -185,6 +213,7 @@ class ConvertAction(ActionCommand):
             elif cell_type in ("markdown", "raw"):
                 source = self._get_cell_source(cell)
                 for line in source.split("\n"):
+                    line = self._escape_markdown_syntax(line)
                     body_lines.append(f"%[text] {line}")
 
             if cell_idx < len(cells) - 1:

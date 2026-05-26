@@ -724,3 +724,93 @@ def test_build_appendix_with_outputs(convert_action):
     assert "%[output:abc12345]" in joined
     assert "%   data:" in joined
     assert '"dataType":"text"' in joined
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        pytest.param("<div>hello</div>", "\\<div\\>hello\\</div\\>", id="html_tags"),
+        pytest.param("<br/>", "\\<br/\\>", id="self_closing_tag"),
+        pytest.param(
+            '<a href="url">link</a>',
+            '\\<a href="url"\\>link\\</a\\>',
+            id="tag_with_attributes",
+        ),
+        pytest.param("no tags here", "no tags here", id="no_tags"),
+        pytest.param("a < b > c", "a < b > c", id="non_tag_angle_brackets"),
+    ],
+)
+def test_escape_html_tags(convert_action, text, expected):
+    """Test that HTML tags are escaped with backslashes."""
+    # Act & Assert
+    assert convert_action._escape_html_tags(text) == expected
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        pytest.param("<div>hi</div>", "\\<div\\>hi\\</div\\>", id="html_tags"),
+        pytest.param("---", "\\---", id="horizontal_rule_3_dashes"),
+        pytest.param("-----", "\\-----", id="horizontal_rule_5_dashes"),
+        pytest.param("> Block quote", "\\> Block quote", id="block_quote"),
+        pytest.param("  > Indented", "  \\> Indented", id="block_quote_indented"),
+        pytest.param("   >   HE", "   \\>   HE", id="block_quote_multiple_spaces"),
+        pytest.param("plain text", "plain text", id="no_escaping_needed"),
+        pytest.param("a - b - c", "a - b - c", id="dashes_not_horizontal_rule"),
+        pytest.param("->arrow", "->arrow", id="gt_not_at_start"),
+    ],
+)
+def test_escape_markdown_syntax(convert_action, text, expected):
+    """Test that markdown syntax conflicting with rich .m format is escaped."""
+    # Act & Assert
+    assert convert_action._escape_markdown_syntax(text) == expected
+
+
+def test_convert_notebook_markdown_cell_with_html(convert_action):
+    """Test that HTML in markdown cells is escaped in the output."""
+    # Arrange
+    notebook = {
+        "cells": [
+            {
+                "cell_type": "markdown",
+                "source": "<table>\n<tr><td>hi</td></tr>\n</table>",
+            }
+        ]
+    }
+
+    # Act
+    result = convert_action._convert_notebook(notebook)
+
+    # Assert
+    assert "%[text] \\<table\\>" in result
+    assert "%[text] \\<tr\\>\\<td\\>hi\\</td\\>\\</tr\\>" in result
+    assert "%[text] \\</table\\>" in result
+
+
+def test_convert_notebook_markdown_cell_with_horizontal_rule(convert_action):
+    """Test that horizontal rules in markdown cells are escaped."""
+    # Arrange
+    notebook = {"cells": [{"cell_type": "markdown", "source": "above\n---\nbelow"}]}
+
+    # Act
+    result = convert_action._convert_notebook(notebook)
+
+    # Assert
+    assert "%[text] \\---" in result
+    assert "%[text] above" in result
+    assert "%[text] below" in result
+
+
+def test_convert_notebook_markdown_cell_with_block_quote(convert_action):
+    """Test that block quotes in markdown cells are escaped."""
+    # Arrange
+    notebook = {
+        "cells": [{"cell_type": "markdown", "source": "> Quote\n  > Indented quote"}]
+    }
+
+    # Act
+    result = convert_action._convert_notebook(notebook)
+
+    # Assert
+    assert "%[text] \\> Quote" in result
+    assert "%[text]   \\> Indented quote" in result
