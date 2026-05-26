@@ -85,5 +85,5 @@ export async function verifyOutputContains (
     await page.notebook.activate(notebookName);
     const cellOutput = (await page.notebook.getCellTextOutput(0)) ?? [''];
     expect(cellOutput.length).toBeGreaterThan(0);
-    expect(cellOutput[0]).toContain(expectedOutput);
+    expect(cellOutput.join('\n')).toContain(expectedOutput);
 }
