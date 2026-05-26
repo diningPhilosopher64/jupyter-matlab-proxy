@@ -158,4 +158,4 @@ async def test_execute_logs_error_on_validation_failure(
     # Assert
     check_file_exists_action.log.error.assert_called_once()
     error_message = check_file_exists_action.log.error.call_args[0][0]
-    assert "CheckFileExists action failed" in error_message
+    assert "CheckFileExists action validation failed" in error_message
