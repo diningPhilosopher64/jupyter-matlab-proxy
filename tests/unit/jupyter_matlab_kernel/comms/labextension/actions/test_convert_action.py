@@ -7,6 +7,10 @@ from unittest.mock import MagicMock
 import pytest
 from pathlib import Path
 from jupyter_matlab_kernel.comms.labextension.actions import ConvertAction
+from jupyter_matlab_kernel.comms.labextension.actions.convert_action import (
+    _escape_html_tags,
+    _escape_markdown_syntax,
+)
 from jupyter_matlab_kernel.comms.labextension.actions.types import ActionTypes
 
 
@@ -740,10 +744,10 @@ def test_build_appendix_with_outputs(convert_action):
         pytest.param("a < b > c", "a < b > c", id="non_tag_angle_brackets"),
     ],
 )
-def test_escape_html_tags(convert_action, text, expected):
+def test_escape_html_tags(text, expected):
     """Test that HTML tags are escaped with backslashes."""
     # Act & Assert
-    assert convert_action._escape_html_tags(text) == expected
+    assert _escape_html_tags(text) == expected
 
 
 @pytest.mark.parametrize(
@@ -760,10 +764,10 @@ def test_escape_html_tags(convert_action, text, expected):
         pytest.param("->arrow", "->arrow", id="gt_not_at_start"),
     ],
 )
-def test_escape_markdown_syntax(convert_action, text, expected):
+def test_escape_markdown_syntax(text, expected):
     """Test that markdown syntax conflicting with rich .m format is escaped."""
     # Act & Assert
-    assert convert_action._escape_markdown_syntax(text) == expected
+    assert _escape_markdown_syntax(text) == expected
 
 
 def test_convert_notebook_markdown_cell_with_html(convert_action):
@@ -814,3 +818,94 @@ def test_convert_notebook_markdown_cell_with_block_quote(convert_action):
     # Assert
     assert "%[text] \\> Quote" in result
     assert "%[text]   \\> Indented quote" in result
+
+
+def test_convert_notebook_markdown_table(convert_action):
+    """Test that markdown tables are wrapped with %[text:table] markers."""
+    # Arrange
+    notebook = {
+        "cells": [
+            {
+                "cell_type": "markdown",
+                "source": "| Col A | Col B |\n| --- | --- |\n| x | y |",
+            }
+        ]
+    }
+
+    # Act
+    result = convert_action._convert_notebook(notebook)
+
+    # Assert
+    lines = result.split("\n")
+    assert '%[text:table]{"ignoreHeader":false}' in lines
+    assert "%[text] | Col A | Col B |" in lines
+    assert "%[text] | --- | --- |" in lines
+    assert "%[text] | x | y |" in lines
+    assert "%[text:table]" in lines
+
+
+def test_convert_notebook_markdown_table_with_surrounding_text(convert_action):
+    """Test that table markers don't affect surrounding non-table content."""
+    # Arrange
+    notebook = {
+        "cells": [
+            {
+                "cell_type": "markdown",
+                "source": "Before table\n| A | B |\n| --- | --- |\n| 1 | 2 |\nAfter table",
+            }
+        ]
+    }
+
+    # Act
+    result = convert_action._convert_notebook(notebook)
+
+    # Assert
+    lines = result.split("\n")
+    assert "%[text] Before table" in lines
+    assert '%[text:table]{"ignoreHeader":false}' in lines
+    assert "%[text] | A | B |" in lines
+    assert "%[text] | --- | --- |" in lines
+    assert "%[text] | 1 | 2 |" in lines
+    assert "%[text:table]" in lines
+    assert "%[text] After table" in lines
+
+
+def test_convert_notebook_pipe_lines_without_separator_not_table(convert_action):
+    """Test that pipe lines without a separator row are not treated as a table."""
+    # Arrange
+    notebook = {
+        "cells": [
+            {
+                "cell_type": "markdown",
+                "source": "| not a table |\n| also not |",
+            }
+        ]
+    }
+
+    # Act
+    result = convert_action._convert_notebook(notebook)
+
+    # Assert
+    lines = result.split("\n")
+    assert '%[text:table]{"ignoreHeader":false}' not in lines
+    assert "%[text:table]" not in lines
+
+
+def test_convert_notebook_table_needs_minimum_three_rows(convert_action):
+    """Test that a table needs at least 3 rows (header + separator + data)."""
+    # Arrange - only header and separator, no data row
+    notebook = {
+        "cells": [
+            {
+                "cell_type": "markdown",
+                "source": "| A |\n| --- |",
+            }
+        ]
+    }
+
+    # Act
+    result = convert_action._convert_notebook(notebook)
+
+    # Assert
+    lines = result.split("\n")
+    assert '%[text:table]{"ignoreHeader":false}' not in lines
