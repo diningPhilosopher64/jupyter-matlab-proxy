@@ -1,4 +1,4 @@
-# Copyright 2023-2025 The MathWorks, Inc.
+# Copyright 2023-2026 The MathWorks, Inc.
 # Helper functions to communicate with matlab-proxy and MATLAB
 
 import http
@@ -192,21 +192,25 @@ class MWICommHelper:
 
     async def send_execution_request_to_matlab(self, code):
         """
-        Evaluate MATLAB code and capture results.
+        Evaluate MATLAB code and yield individual outputs as they become available.
 
         Args:
             code (string): MATLAB code to be evaluated
 
-        Returns:
-            List(dict): list of outputs captured during evaluation.
+        Yields:
+            dict: individual output captured during evaluation.
 
         Raises:
             HTTPStatusError: Occurs when connection to matlab-proxy cannot be established.
         """
         self.logger.debug("Sending execution request to MATLAB")
-        return await self._send_jupyter_request_to_matlab(
+        outputs = await self._send_jupyter_request_to_matlab(
             "execute", [code, self.kernel_id], self._http_shell_client
         )
+        if not isinstance(outputs, list):
+            outputs = [outputs]
+        for output in outputs:
+            yield output
 
     async def send_completion_request_to_matlab(self, code, cursor_pos):
         """
@@ -278,6 +282,24 @@ class MWICommHelper:
         if resp.status != http.HTTPStatus.OK:
             self.logger.error("Error occurred during communication with matlab-proxy")
             resp.raise_for_status()
+
+    async def convert_mathml_to_latex(self, mathml: str) -> str:
+        """Convert MathML to LaTeX using the MATLAB jupyter.convertMathMLToLaTeX function.
+
+        Args:
+            mathml: MathML representation of a symbolic expression.
+
+        Returns:
+            The LaTeX string. May be empty if the MATLAB webwindow fails to load.
+
+        Raises:
+            MATLABConnectionError: If MATLAB connection is lost.
+            Exception: If the feval execution fails.
+        """
+        self.logger.debug("Sending convertMathMLToLaTeX request to MATLAB")
+        return await self._send_jupyter_request_to_matlab(
+            "convertMathMLToLaTeX", [mathml], self._http_shell_client
+        )
 
     async def _send_feval_request_to_matlab(self, http_client, fname, nargout, *args):
         """Execute a MATLAB function call (feval) through the matlab-proxy.

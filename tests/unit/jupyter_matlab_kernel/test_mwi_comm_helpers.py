@@ -1,4 +1,4 @@
-# Copyright 2023-2025 The MathWorks, Inc.
+# Copyright 2023-2026 The MathWorks, Inc.
 # This file contains tests for jupyter_matlab_kernel.mwi_comm_helpers
 
 import asyncio
@@ -138,7 +138,8 @@ async def test_execution_request_bad_request(monkeypatch, comm_helper_fixture):
 
     code = "placeholder for code"
     with pytest.raises(aiohttp.client_exceptions.ClientError) as exceptionInfo:
-        await comm_helper_fixture.send_execution_request_to_matlab(code)
+        async for _ in comm_helper_fixture.send_execution_request_to_matlab(code):
+            pass
     assert mock_exception_message in str(exceptionInfo.value)
 
 
@@ -168,7 +169,8 @@ async def test_execution_request_invalid_feval_response(
 
     code = "placeholder for code"
     with pytest.raises(MATLABConnectionError) as exceptionInfo:
-        await comm_helper_fixture.send_execution_request_to_matlab(code)
+        async for _ in comm_helper_fixture.send_execution_request_to_matlab(code):
+            pass
     assert str(exceptionInfo.value) == str(MATLABConnectionError())
 
 
@@ -208,7 +210,8 @@ async def test_execution_interrupt(monkeypatch, comm_helper_fixture):
 
     code = "placeholder for code"
     with pytest.raises(Exception) as exceptionInfo:
-        await comm_helper_fixture.send_execution_request_to_matlab(code)
+        async for _ in comm_helper_fixture.send_execution_request_to_matlab(code):
+            pass
     assert "Operation may have interrupted by user" in str(exceptionInfo.value)
 
 
@@ -243,7 +246,9 @@ async def test_execution_success(monkeypatch, comm_helper_fixture):
 
     code = "placeholder for code"
     try:
-        outputs = await comm_helper_fixture.send_execution_request_to_matlab(code)
+        outputs = [
+            r async for r in comm_helper_fixture.send_execution_request_to_matlab(code)
+        ]
     except Exception:
         pytest.fail("Unexpected failured in execution request")
 

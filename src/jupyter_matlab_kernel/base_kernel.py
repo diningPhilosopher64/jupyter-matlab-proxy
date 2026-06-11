@@ -27,8 +27,9 @@ from jupyter_matlab_kernel.magic_execution_engine import (
 )
 from jupyter_matlab_kernel.mwi_comm_helpers import MWICommHelper
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
-
 from jupyter_matlab_kernel.comms import LabExtensionCommunication
+from jupyter_matlab_kernel.outputs.processor import OutputProcessor
+from jupyter_matlab_kernel.outputs.types import JupyterOutput
 
 _MATLAB_STARTUP_TIMEOUT = mwi_settings.get_process_startup_timeout()
 
@@ -253,29 +254,22 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
                     for output in accumulated_magic_outputs:
                         self.display_output(output)
 
-                # Perform execution and categorization of outputs in MATLAB. Blocks
-                # until execution results are received from MATLAB.
-                outputs = await self.mwi_comm_helper.send_execution_request_to_matlab(
+                # Perform execution and categorization of outputs in MATLAB.
+                raw_outputs = self.mwi_comm_helper.send_execution_request_to_matlab(
                     code
                 )
 
                 if performed_startup_checks and not accumulated_magic_outputs:
                     self.display_output(
-                        {"type": "clear_output", "content": {"wait": False}}
+                        {"type": "clear_output", "content": {"wait": True}}
                     )
 
-                self.log.debug(
-                    "Received outputs after execution in MATLAB. Clearing output area"
+                # Process and display outputs as they arrive.
+                output_processor = OutputProcessor(
+                    mwi_comm_helper=self.mwi_comm_helper, logger=self.log
                 )
-
-                # Display all the outputs produced during the execution of code.
-                for idx, data in enumerate(outputs):
-                    self.log.debug(f"Displaying output {idx + 1}:\n{data}")
-
-                    # Ignore empty values returned from MATLAB.
-                    if not data:
-                        continue
-                    self.display_output(data)
+                async for output in output_processor.process(raw_outputs):
+                    self.display_output(output)
 
             # Execute post execution of MAGICs
             for output in self.magic_engine.process_after_cell_execution():
@@ -528,26 +522,15 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
         """
         Common function to send execution outputs to Jupyter UI.
         For more information, look at https://jupyter-client.readthedocs.io/en/stable/messaging.html#messages-on-the-iopub-pub-sub-channel
-
-        Input Example:
-        1.  Execution Output:
-            out = {
-                "type": "execute_result",
-                "mimetype": ["text/plain","text/html"],
-                "value": ["Hello","<html><body>Hello</body></html>"]
-            }
-        2.  For all other message types:
-            out = {
-                "type": "stream",
-                "content": {
-                    "name": "stderr",
-                    "text": "An error occurred"
-                }
-            }
-
-        Args:
-            out (dict): A dictionary containing the type of output and the content of the output.
         """
+        if isinstance(out, JupyterOutput):
+            content = out.to_content()
+            if out.msg_type == "execute_result":
+                content["execution_count"] = self.execution_count
+            self.send_response(self.iopub_socket, out.msg_type, content)
+            return
+
+        # Legacy dict handling for magics and startup messages.
         msg_type = out["type"]
         if msg_type == "execute_result":
             assert len(out["mimetype"]) == len(out["value"])
