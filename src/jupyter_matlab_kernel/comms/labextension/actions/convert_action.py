@@ -1,113 +1,16 @@
 # Copyright 2026 The MathWorks, Inc.
 
 from . import ActionCommand, ActionTypes
+from .markdown_converter import convert_markdown_lines, _escape_markdown_syntax
 from pathlib import Path
-import base64
 import json
 import re
 import uuid
 
 _PLACEHOLDER_TEXT = "Please rerun this cell to see output"
+_ENABLE_MARKDOWN_CONVERSION = False
 
 
-# --- Markdown helpers for rich .m conversion ---
-
-
-def _escape_html_tags(text):
-    """Escape < and > in HTML tags. e.g. <div> -> \\<div\\>"""
-    return re.sub(
-        r"(</?[a-zA-Z][^>]*>)",
-        lambda m: m.group(0).replace("<", "\\<").replace(">", "\\>"),
-        text,
-    )
-
-
-def _escape_markdown_syntax(text):
-    """Escape markdown syntax that conflicts with MATLAB's rich .m format.
-
-    Handles:
-      - HTML tags: <tag> -> \\<tag\\>
-      - Horizontal rules: --- -> \\---
-      - Block quotes: > text -> \\> text
-    """
-    text = _escape_html_tags(text)
-
-    if re.match(r"^-{3,}$", text.strip()):
-        text = "\\" + text
-
-    text = re.sub(r"^(\s*)>", r"\1\\>", text)
-
-    return text
-
-
-def _is_table_row(line):
-    """Check if a line is a markdown table row (contains pipes as delimiters)."""
-    stripped = line.strip()
-    return stripped.startswith("|") and stripped.endswith("|") and len(stripped) > 1
-
-
-def _is_table_separator(line):
-    """Check if a line is a table separator row like | --- | --- |."""
-    stripped = line.strip()
-    if not (stripped.startswith("|") and stripped.endswith("|")):
-        return False
-    cells = stripped[1:-1].split("|")
-    return all(re.match(r"^\s*:?-{3,}:?\s*$", cell) for cell in cells)
-
-
-def _is_table_start(lines, index):
-    """Check if a valid GFM table starts at index (header + separator + data)."""
-    return (
-        index + 2 < len(lines)
-        and _is_table_row(lines[index])
-        and _is_table_separator(lines[index + 1])
-        and _is_table_row(lines[index + 2])
-    )
-
-
-def _normalize_separator(line):
-    """Normalize a table separator to have spaces: |---|---| -> | --- | --- |"""
-    stripped = line.strip()
-    cells = stripped[1:-1].split("|")
-    normalized_cells = [f" {cell.strip()} " for cell in cells]
-    return "|" + "|".join(normalized_cells) + "|"
-
-
-def _convert_table(lines, start):
-    """Consume consecutive table rows starting at index and return rich .m lines.
-
-    Returns (output_lines, next_index).
-    """
-    table_lines = []
-    i = start
-    while i < len(lines) and _is_table_row(lines[i]):
-        if _is_table_separator(lines[i]):
-            table_lines.append(_normalize_separator(lines[i]))
-        else:
-            table_lines.append(lines[i])
-        i += 1
-
-    result = []
-    result.append('%[text:table]{"ignoreHeader":false}')
-    for tline in table_lines:
-        result.append(f"%[text] {tline}")
-    result.append("%[text:table]")
-    return result, i
-
-
-def _convert_markdown_lines(lines):
-    """Convert markdown lines to rich .m text lines, detecting tables."""
-    result = []
-    i = 0
-    while i < len(lines):
-        if _is_table_start(lines, i):
-            table_output, i = _convert_table(lines, i)
-            result.extend(table_output)
-        else:
-            line = _escape_markdown_syntax(lines[i])
-            result.append(f"%[text] {line}")
-            i += 1
-    return result
 
 
 class ConvertAction(ActionCommand):
@@ -232,7 +135,7 @@ class ConvertAction(ActionCommand):
 
         return self._placeholder_output()
 
-    def _build_appendix(self, outputs_data):
+    def _build_appendix(self, outputs_data, media_entries):
         lines = []
         lines.append("")
         lines.append('%[appendix]{"version":"1.0"}')
@@ -243,6 +146,11 @@ class ConvertAction(ActionCommand):
         for oid, data_dict in outputs_data:
             lines.append("%---")
             lines.append(f"%[output:{oid}]")
+            lines.append(f"%   data: {self._serialize_json(data_dict)}")
+
+        for entry_type, media_id, data_dict in media_entries:
+            lines.append("%---")
+            lines.append(f"%[{entry_type}:{media_id}]")
             lines.append(f"%   data: {self._serialize_json(data_dict)}")
 
         lines.append("%---")
@@ -257,12 +165,11 @@ class ConvertAction(ActionCommand):
 
         body_lines = []
         outputs_data = []
+        media_entries = []
 
         for cell_idx, cell in enumerate(cells):
             cell_type = cell["cell_type"]
 
-            # Process code cells by adding source lines directly and collecting outputs to be
-            # added in the appendix, with references in the source as %[output:outputId]
             if cell_type == "code":
                 source = self._get_cell_source(cell)
 
@@ -284,17 +191,21 @@ class ConvertAction(ActionCommand):
 
                 body_lines.extend(source_lines)
 
-            # Process markdown and raw cells by prefixing each line with %[text] and escaping markdown syntax
             elif cell_type in ("markdown", "raw"):
                 source = self._get_cell_source(cell)
-                body_lines.extend(_convert_markdown_lines(source.split("\n")))
+                if _ENABLE_MARKDOWN_CONVERSION:
+                    body_lines.extend(
+                        convert_markdown_lines(source.split("\n"), media_entries)
+                    )
+                else:
+                    for line in source.split("\n"):
+                        line = _escape_markdown_syntax(line)
+                        body_lines.append(f"%[text] {line}")
 
-            # Add section break '%%' between cells, except
-            # after the last cell(to avoid unnecessary section break at the end of the file)
             if cell_idx < len(cells) - 1:
                 body_lines.append("%%")
 
-        appendix_lines = self._build_appendix(outputs_data)
+        appendix_lines = self._build_appendix(outputs_data, media_entries)
 
         return "\n".join(body_lines + appendix_lines)
 
