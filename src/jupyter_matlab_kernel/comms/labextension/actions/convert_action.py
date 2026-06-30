@@ -8,7 +8,7 @@ import re
 import uuid
 
 _PLACEHOLDER_TEXT = "Please rerun this cell to see output"
-_ENABLE_MARKDOWN_CONVERSION = False
+_ENABLE_MARKDOWN_CONVERSION = True
 
 
 
