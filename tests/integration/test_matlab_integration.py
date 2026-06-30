@@ -97,18 +97,20 @@ class MATLABKernelTests(jupyter_kernel_test.KernelTests):
         """Validates if 'peaks' command plots a figure in jupyter cell output"""
 
         reply, output_msgs = self._run_code(code="peaks")
-        execute_result_msgs = [
-            msg for msg in output_msgs if msg["header"]["msg_type"] == "execute_result"
+        update_display_msgs = [
+            msg
+            for msg in output_msgs
+            if msg["header"]["msg_type"] == "update_display_data"
         ]
         self.assertGreater(
-            len(execute_result_msgs),
+            len(update_display_msgs),
             0,
-            f"Expected 'execute_result' in output but got: "
+            f"Expected 'update_display_data' in output but got: "
             f"{[msg['header']['msg_type'] for msg in output_msgs]}",
         )
         self.assertIn(
             "image/png",
-            execute_result_msgs[-1]["content"]["data"],
+            update_display_msgs[-1]["content"]["data"],
             "No figure was generated in output",
         )
 

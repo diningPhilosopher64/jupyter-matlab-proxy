@@ -10,7 +10,7 @@ function result = complete(code, cursorPosition)
 
 % Get tab completion data for matlab code. Using evalin('base',..) so that the
 % function workspace does not affect the results.
-completionCmd = ['builtin(''_programmingAidsTest'','''',' mat2str(code) ',' mat2str(cursorPosition) ', [])'];
+completionCmd = ['builtin(''_programmingAidsTest'','''',' mat2str(code(1:cursorPosition)) ',' mat2str(cursorPosition) ', [])'];
 completionData = jsondecode(evalin('base', completionCmd));
 
 startPosition = getStartPosition(code, cursorPosition);
@@ -121,9 +121,10 @@ end
 function startPosition = getStartPosition(code, cursorPosition)
 currentPosition = cursorPosition;
 while currentPosition > 0
-    % Stop on any character that is not a word character (letter, digit, or underscore).
+    % Stop on any character that is not a word character (letter, digit, or underscore)
+    % or a dot used for struct/object field access (e.g. mystruct.myfield).
     % This ensures operators like '=' do not get included in the replaced range.
-    if isempty(regexp(code(currentPosition), '^\w$', 'once'))
+    if isempty(regexp(code(currentPosition), '^[\w.]$', 'once'))
         break;
     end
     currentPosition = currentPosition - 1;

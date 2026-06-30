@@ -102,5 +102,52 @@ classdef TestCompleteFunction < matlab.unittest.TestCase
             testCase.verifyEqual(result.end, 5, ...
                 "End should equal cursor position");
         end
+
+        function testStructFieldCompletionStartPosition(testCase)
+        % Test that completing a struct field (e.g. s.myf -> s.myfield) walks
+        % getStartPosition back past the dot.
+        %
+        % Dots are treated as word characters in getStartPosition, so the
+        % walk continues to position 0 and the whole 's.myf' range is replaced.
+            evalin('base', 'completionTestStruct = struct(''myfield'', 1);');
+            cleanup = onCleanup(@() evalin('base', 'clear completionTestStruct'));
+
+            code = 'completionTestStruct.myf';
+            cursorPosition = length(code);
+            result = jupyter.complete(code, cursorPosition);
+
+            testCase.verifyTrue(ismember('completionTestStruct.myfield', result.matches), ...
+                "Struct field 'completionTestStruct.myfield' should be in matches");
+            % Dot is now a word character in getStartPosition, so the walk-back
+            % continues through '.' all the way to the start of the struct name.
+            testCase.verifyEqual(result.start, 0, ...
+                "Start should be 0 (walking back past the dot) for struct field access");
+            testCase.verifyEqual(result.end, cursorPosition, ...
+                "End should equal cursor position");
+        end
+
+        function testCompletionUsesOnlyTextBeforeCursor(testCase)
+        % Test that when the cursor is in the middle of a word, completions are
+        % generated from only the text before the cursor, not the full word.
+        %
+        % code(1:cursorPosition) is passed, so only 'p' is used, returning
+        % all functions that start with 'p' (peaks, plot, printf, etc.).
+            code = 'peaks';
+            cursorPosition = 1; % Cursor is after 'p', text before cursor is 'p'
+            result = jupyter.complete(code, cursorPosition);
+
+            testCase.verifyTrue(ismember('peaks', result.matches), ...
+                "'peaks' should be among the completions for 'p'");
+            % 'plot' would not appear if the full word 'peaks' were used for
+            % completion - its presence confirms only 'p' was considered.
+            testCase.verifyTrue(ismember('plot', result.matches), ...
+                "'plot' should be in matches when completing 'p', not just 'peaks'");
+            testCase.verifyGreaterThan(length(result.matches), 1, ...
+                "Completing 'p' should return multiple matches, not only 'peaks'");
+            testCase.verifyEqual(result.start, 0, ...
+                "Start should be 0 for completing 'p'");
+            testCase.verifyEqual(result.end, 1, ...
+                "End should equal cursor position (1)");
+        end
     end
 end

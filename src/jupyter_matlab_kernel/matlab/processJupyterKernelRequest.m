@@ -18,54 +18,59 @@ function result = processJupyterKernelRequest(request_type, execution_request_ty
 %                                   - "shutdown"
 %                                      - string - ID of the kernel
 %   Outputs:
-%       - cell array on struct
-%           - type      - string - jupyter output type. Supported values are
-%                                  "execute_result" and "stream"
-%           - mimetype  - cell array - mimetypes of the outputs. Usually these are
-%                                      different representations for the same output.
-%           - value     - cell array - Output value corresponding to the representation
-%                                      of mimetype at its index.
-%           - content   - struct - Used only for 'stream' type
-%               - name  - string - name of the stream. Supported values are 'stdout'
-%                                  and 'stderr'.
-%               - value - string - content of the stream
+%       Varies by request_type:
+%       - "execute": cell array of structs, each with:
+%           - type       - string - output type. Supported values: "matrix",
+%                                   "variable", "variableString", "symbolic",
+%                                   "text", "warning", "error", "stderr",
+%                                   "figure", "text/html"
+%           - outputData - struct - fields vary by type (see OutputProcessor)
+%       - "complete": struct with:
+%           - matches     - cell array - completion match strings
+%           - completions - cell array of structs (text, type, start, end)
+%           - start       - number - start of replacement range
+%           - end         - number - end of replacement range
+%       - "shutdown": empty cell array {}
+%       - "convertMathMLToLaTeX": string - LaTeX representation
 %
 
-% Copyright 2023 The MathWorks, Inc.
+% Copyright 2023-2026 The MathWorks, Inc.
 
 % Lock the function on the first use to prevent it from being cleared from the memory
 mlock;
 
-code = varargin{1};
-
-% If the code is received through an eval request, it will be JSON encoded to
-% prevent the eval string to be broken down by MATLAB due to formatting. We need
-% to decode the received code to get the original user code. For example
-% "processJupyterKernelRequest('execute', 'eval', 'a = "Hello\\n''world''"')".
+% If the first argument is received through an eval request, it will be JSON
+% encoded to prevent the eval string from being broken by special characters.
+% Decode it back to get the original value.
 if execution_request_type == "eval"
-    code = jsondecode(code);
+    varargin{1} = jsondecode(varargin{1});
 end
 
 % Delegate feature work based on request type
 try
     switch(request_type)
         case 'execute'
+            code = varargin{1};
             kernelId = varargin{2};
             output = jupyter.execute(code, kernelId);
         case 'complete'
+            code = varargin{1};
             cursorPosition = varargin{2};
             output = jupyter.complete(code, cursorPosition);
         case 'shutdown'
             kernelId = varargin{1};
             output = jupyter.shutdown(kernelId);
+        case 'convertMathMLToLaTeX'
+            mathml = varargin{1};
+            output = jupyter.convertMathMLToLaTeX(mathml);
     end
 catch ME
     % The code withing try block should be exception safe. In case anything we
     % have missed an edge case, catch the exception and send it to the user.
-    errorMessage.type = 'stream';
-    errorMessage.content.name = 'stderr';
-    errorMessage.content.text = sprintf('MATLAB Kernel Error:\n%s', getReport(ME));
-    output = {errorMessage};
+    errMsg = sprintf('MATLAB Kernel Error:\n%s', ...
+        getReport(ME, 'extended', 'hyperlinks', 'off'));
+    output = {struct('type', 'stderr', ...
+        'outputData', struct('text', errMsg))};
 end
 
 if execution_request_type == "feval"

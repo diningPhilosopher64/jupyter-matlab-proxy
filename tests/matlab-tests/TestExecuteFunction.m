@@ -1,4 +1,4 @@
-% Copyright 2024 The MathWorks, Inc.
+% Copyright 2024-2026 The MathWorks, Inc.
 classdef TestExecuteFunction < matlab.unittest.TestCase
     % TestExecuteFunction contains unit tests for the execute function
     properties
@@ -27,10 +27,9 @@ classdef TestExecuteFunction < matlab.unittest.TestCase
             code = 'repmat([1 2 3 4],5,1)';
             kernelId = 'test_kernel_id';
             result = jupyter.execute(code, kernelId);
-            testCase.verifyEqual(result{1}.type, 'execute_result', 'Expected execute_result type');
-            testCase.verifyTrue(any(strcmp(result{1}.mimetype{1}, 'text/html')), 'Expected HTML output');
-            testCase.verifyTrue(any(strcmp(result{1}.mimetype{2}, 'text/plain')), 'Expected HTML output');
-            testCase.verifySubstring(result{1}.value{1}, 'ans = 5');
+            testCase.verifyEqual(result(1).type, 'matrix', 'Expected raw matrix type');
+            testCase.verifySubstring(result(1).outputData.value, '4');
+            testCase.verifyEqual(result(1).outputData.rows, 5);
         end
 
         function testVariableOutput(testCase)
@@ -38,30 +37,29 @@ classdef TestExecuteFunction < matlab.unittest.TestCase
             code = 'var x';
             kernelId = 'test_kernel_id';
             result = jupyter.execute(code, kernelId);
-            testCase.verifyEqual(result{1}.type, 'execute_result', 'Expected execute_result type');
-            testCase.verifyTrue(any(strcmp(result{1}.mimetype{1}, 'text/html')), 'Expected HTML output');
-            testCase.verifyTrue(any(strcmp(result{1}.mimetype{2}, 'text/plain')), 'Expected HTML output');
-            testCase.verifySubstring(result{1}.value{1}, 'ans = 0');
+            testCase.verifyEqual(result(1).type, 'variableString', 'Expected variableString type');
+            testCase.verifySubstring(result(1).outputData.value, '0');
         end
         
-        %Skipping the following test as it fails in public github run
-        % function testSymbolicOutput(testCase)
-        %     %Test execution of a code that generates a symbolic output
-        %     code = 'x = sym(1/3); disp(x);';
-        %     kernelId = 'test_kernel_id';
-        %     result = jupyter.execute(code, kernelId);
-        %     testCase.verifyEqual(result{1}.type, 'execute_result', 'Expected execute_result type');
-        %     testCase.verifyTrue(any(strcmp(result{1}.mimetype{1}, ["text/latex", "text/html"])), 'Expected LaTeX or HTML output');
-        % end
+        function testSymbolicOutput(testCase)
+            % Test execution of a code that generates a symbolic output
+            code = 'x = sym(1/3); disp(x);';
+            kernelId = 'test_kernel_id';
+            result = jupyter.execute(code, kernelId);
+            testCase.verifyEqual(result(1).type, 'symbolic', ...
+                'Expected symbolic type');
+            testCase.verifyTrue( ...
+                isfield(result(1).outputData, 'value'), ...
+                'Expected symbolic value field');
+        end
 
         function testErrorOutput(testCase)
             % Test execution of a code that generates an error
             code = 'error(''Test error'');';
             kernelId = 'test_kernel_id';
             result = jupyter.execute(code, kernelId);
-            testCase.verifyEqual(result{1}.type, 'stream', 'Expected stream type');
-            testCase.verifyEqual(result{1}.content.name, 'stderr', 'Expected stderr stream');
-            testCase.verifyTrue(contains(result{1}.content.text, 'Test error'), 'Expected error message');
+            testCase.verifyEqual(result(1).type, 'error', 'Expected error type');
+            testCase.verifyTrue(contains(result(1).outputData.text, 'Test error'), 'Expected error message');
         end
 
         function testFigureOutput(testCase)
@@ -69,9 +67,14 @@ classdef TestExecuteFunction < matlab.unittest.TestCase
             code = 'figure; plot(1:10); title(''Test Figure'');';
             kernelId = 'test_kernel_id';
             result = jupyter.execute(code, kernelId);
-            testCase.verifyEqual(result{1}.type, 'execute_result', 'Expected execute_result type');
-            testCase.verifyTrue(any(strcmp(result{1}.mimetype, 'image/png')), 'Expected PNG image output');
-            testCase.verifyTrue(~isempty(result{1}.value{1}));
+            
+            hasFigure = false;
+            for i = 1:length(result)
+                if strcmp(result(i).type, 'figure') && isfield(result(i).outputData, 'figureImage')
+                    hasFigure = true;
+                end
+            end
+            testCase.verifyTrue(hasFigure, 'Expected raw figure image output');
         end
     end
 end
