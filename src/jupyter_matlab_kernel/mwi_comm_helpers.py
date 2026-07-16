@@ -287,10 +287,10 @@ class MWICommHelper:
         """
         self.logger.debug("Sending convertMathMLToLaTeX request to MATLAB")
         return await self._send_jupyter_request_to_matlab(
-            "convertMathMLToLaTeX", [mathml], self._http_shell_client
+            "convertMathMLToLaTeX", [mathml]
         )
 
-    async def _send_feval_request_to_matlab(self,  fname, nargout, *args):
+    async def _send_feval_request_to_matlab(self, fname, nargout, *args):
         """Execute a MATLAB function call (feval) through the matlab-proxy.
 
         Sends a function evaluation request to MATLAB, handling path setup and synchronous execution.

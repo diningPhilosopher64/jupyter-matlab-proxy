@@ -157,13 +157,9 @@ def _convert_hyperlinks(text):
       [link text](./file.m)    ->  [link text](file:./file.m)
     """
     # (#ID) -> (internal:ID) — internal document anchor links
-    text = re.sub(
-        r"\[([^\]]+)\]\(#([^)]+)\)", r"[\1](internal:\2)", text
-    )
+    text = re.sub(r"\[([^\]]+)\]\(#([^)]+)\)", r"[\1](internal:\2)", text)
     # (./path) -> (file:./path) — relative file links
-    text = re.sub(
-        r"\[([^\]]+)\]\(\./([^)]+)\)", r"[\1](file:./\2)", text
-    )
+    text = re.sub(r"\[([^\]]+)\]\(\./([^)]+)\)", r"[\1](file:./\2)", text)
     return text
 
 
@@ -285,7 +281,7 @@ def _convert_image_block(lines, index, appendix_entries):
         i += 1
 
     # Extract alignment from CSS style (text-align:left -> "baseline")
-    align_match = re.search(r'text-align:\s*(\w+)', block)
+    align_match = re.search(r"text-align:\s*(\w+)", block)
     align = align_match.group(1) if align_match else "baseline"
     if align == "left":
         align = "baseline"
@@ -582,7 +578,9 @@ def _convert_table(lines, start, pending_anchor=None):
 
     # Consume all data rows (pipe-delimited, not separators)
     data_rows = []
-    while i < len(lines) and _is_table_row(lines[i]) and not _is_table_separator(lines[i]):
+    while (
+        i < len(lines) and _is_table_row(lines[i]) and not _is_table_separator(lines[i])
+    ):
         row = lines[i].strip()
         cells = row[1:-1].split("|")
         cleaned = "| " + " | ".join(_clean_table_cell(c) for c in cells) + " |"
@@ -619,6 +617,90 @@ def _convert_table(lines, start, pending_anchor=None):
 
     result.append("%[text:table]")  # Closing marker
     return result, i
+
+
+# =============================================================================
+# BLOCK LATEX HANDLING ($$...$$)
+# =============================================================================
+# Jupyter markdown supports "display math" via double-dollar delimiters:
+#   $$\int_0^\infty e^{-x} dx = 1$$              (single line)
+# or fenced across multiple lines:
+#   $$
+#   \int_0^\infty e^{-x} dx = 1
+#   $$
+#
+# Rich .m has NO double-dollar block syntax — it has ONLY the single-dollar
+# equation delimiter ($...$), and RTC infers display vs. inline style itself
+# (per the "Rich text markup syntax" spec: "DisplayStyle ... will be inferred
+# by the equation node in RTC, and not explicitly stored").
+#
+# If we naively passed $$...$$ through, MATLAB would parse the OUTER pair as a
+# single inline equation and treat the inner "$$" as literal dollars, escaping
+# them to &dollar&; — mangling the equation.
+#
+# Instead we deliberately produce that escaped form ourselves, but for the WHOLE
+# original block: reconstruct the "$$...$$" text, escape every literal "$" to
+# "&dollar&;" (the spec's equation escape for "$"), then wrap the result in a
+# single "$...$" equation:
+#
+#   $$<expr>$$  ->  %[text] $&dollar&;&dollar&;<expr>&dollar&;&dollar&;$
+#
+# This is lossless: MATLAB's export() converts "&dollar&;" back to "$", so the
+# ipynb round-trips to the original "$$<expr>$$" block-math delimiters.
+# =============================================================================
+
+
+def _is_block_latex_start(lines, index):
+    """Check if a block-LaTeX ($$...$$) region starts at this line.
+
+    Matches two forms (only when "$$" is at the very start of the line):
+      1. Single-line: "$$...$$" with content, opening and closing on one line
+      2. Fenced start: a line that is exactly "$$" (body follows on later lines)
+    """
+    s = lines[index].strip()
+    if not s.startswith("$$"):
+        return False
+    # Single-line "$$...$$" (needs closing "$$" and some content between)
+    if len(s) > 4 and s.endswith("$$"):
+        return True
+    # Fenced multi-line opener: bare "$$" on its own line
+    if s == "$$":
+        return True
+    return False
+
+
+def _convert_block_latex(lines, index):
+    """Convert a $$...$$ block-LaTeX region to a rich .m single-$ equation.
+
+    Reconstructs the original "$$<expr>$$" text (collapsing a fenced multi-line
+    body onto one line), escapes every literal "$" to "&dollar&;", and wraps the
+    escaped string in outer "$...$".
+
+    Returns: (list_of_output_lines, next_line_index)
+    """
+    s = lines[index].strip()
+
+    if s != "$$" and s.endswith("$$"):
+        # Single-line "$$...$$"
+        text = s
+        next_i = index + 1
+    else:
+        # Fenced form: accumulate body lines until the closing "$$"
+        body_lines = []
+        i = index + 1
+        while i < len(lines) and lines[i].strip() != "$$":
+            stripped = lines[i].strip()
+            if stripped:
+                body_lines.append(stripped)
+            i += 1
+        if i < len(lines):
+            i += 1  # consume the closing "$$" line
+        inner = " ".join(body_lines)
+        text = f"$${inner}$$"
+        next_i = i
+
+    escaped = text.replace("$", "&dollar&;")
+    return [f"%[text] ${escaped}$"], next_i
 
 
 # =============================================================================
@@ -752,7 +834,15 @@ def convert_markdown_lines(lines, appendix_entries):
                 result.append("%%")
             continue
 
-        # --- 8. Empty lines ---
+        # --- 8. Block LaTeX ($$...$$) ---
+        # Converted to a single-$ equation whose body carries the original "$$"
+        # delimiters escaped as &dollar&; (rich .m has no double-dollar syntax).
+        if _is_block_latex_start(lines, i):
+            latex_lines, i = _convert_block_latex(lines, i)
+            result.extend(latex_lines)
+            continue
+
+        # --- 9. Empty lines ---
         # Single blank: ignored (just whitespace in the markdown source)
         # Two or more blanks: creates a section break + empty text line for spacing
         if line.strip() == "":
@@ -766,7 +856,7 @@ def convert_markdown_lines(lines, appendix_entries):
                     result.append("%[text] ")
             continue
 
-        # --- 9. Regular text (fallback) ---
+        # --- 10. Regular text (fallback) ---
         # Apply hyperlink prefix restoration, then escape any conflicting syntax,
         # then emit as a %[text] line
         converted = _convert_hyperlinks(line)

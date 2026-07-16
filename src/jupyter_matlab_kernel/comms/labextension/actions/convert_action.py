@@ -11,8 +11,6 @@ _PLACEHOLDER_TEXT = "Please rerun this cell to see output"
 _ENABLE_MARKDOWN_CONVERSION = True
 
 
-
-
 class ConvertAction(ActionCommand):
     def __init__(self, kernel):
         self.kernel = kernel
@@ -62,6 +60,42 @@ class ConvertAction(ActionCommand):
         if not lines:
             lines = [""]
         return lines
+
+    def _split_symbolic_latex(self, latex):
+        """Split a symbolic text/latex string into (name, value) for rich .m.
+
+        The kernel's output processor (outputs/processor.py `_handle_symbolic`)
+        emits symbolic results in one of two LaTeX shapes:
+
+          Named (assignment, e.g. ``f = ...``):
+              ``f =$\\\\\\ \\displaystyle{}<expr>$``
+          Unnamed (bare expression, e.g. ``disp(f)``):
+              ``$\\displaystyle{}<expr>$``
+
+        A rich .m ``symbolic`` output stores ``name`` (the variable identifier,
+        or empty) and ``value`` (the LaTeX body). The two must be split
+        correctly: the naive ``strip("$").partition(" =")`` approach dumps the
+        entire unnamed expression into ``name``. That corrupt ``name`` carries
+        raw backslashes which MATLAB's export() later writes into the .ipynb
+        without JSON-escaping, producing invalid JSON that JupyterLab can't open.
+
+        The distinguishing signal is the leading ``$``: only the unnamed shape
+        starts with it (the named shape has ``name =`` before the first ``$``).
+        """
+        latex = latex.strip()
+
+        # Unnamed: whole string is the LaTeX body, no variable name. The body is
+        # kept verbatim (including its enclosing ``$``) so no information is lost.
+        if latex.startswith("$"):
+            return "", latex
+
+        # Named: split on the first " =" separating the identifier from the body.
+        # The body after " =" is kept verbatim, preserving its trailing ``$``.
+        name, sep, value = latex.partition(" =")
+        if not sep:
+            # No " =" separator found — treat the whole thing as the body.
+            return "", latex
+        return name.strip(), value
 
     def _classify_output(self, output):
         output_type = output["output_type"]
@@ -113,8 +147,7 @@ class ConvertAction(ActionCommand):
                 latex = data["text/latex"]
                 if isinstance(latex, list):
                     latex = "".join(latex)
-                latex = latex.strip().strip("$")
-                name, _, value = latex.partition(" =")
+                name, value = self._split_symbolic_latex(latex)
                 return {
                     "dataType": "symbolic",
                     "outputData": {"name": name, "value": value},

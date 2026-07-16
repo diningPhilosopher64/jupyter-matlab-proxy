@@ -7,10 +7,6 @@ from unittest.mock import MagicMock
 import pytest
 from pathlib import Path
 from jupyter_matlab_kernel.comms.labextension.actions import ConvertAction
-from jupyter_matlab_kernel.comms.labextension.actions.convert_action import (
-    _escape_html_tags,
-    _escape_markdown_syntax,
-)
 from jupyter_matlab_kernel.comms.labextension.actions.types import ActionTypes
 
 
@@ -399,8 +395,14 @@ def test_classify_output_variable_content(convert_action):
     assert result["outputData"]["value"] == "42"
 
 
-def test_classify_output_latex_content(convert_action):
-    """Test that symbolic output contains correct name and value."""
+def test_classify_output_latex_unnamed_content(convert_action):
+    """Test that an unnamed (bare-expression) symbolic latex output keeps the
+    whole latex body as ``value`` with an empty ``name``.
+
+    The kernel emits unnamed symbolic results as ``$...$`` (leading ``$``).
+    _split_symbolic_latex must NOT split on the interior ``=`` in that case,
+    otherwise the expression is corrupted (see _split_symbolic_latex docstring).
+    """
     # Arrange
     output = {
         "output_type": "execute_result",
@@ -411,8 +413,29 @@ def test_classify_output_latex_content(convert_action):
     result = convert_action._classify_output(output)
 
     # Assert
-    assert result["outputData"]["name"] == "x"
-    assert result["outputData"]["value"] == " y + 1"
+    assert result["outputData"]["name"] == ""
+    assert result["outputData"]["value"] == "$x = y + 1$"
+
+
+def test_classify_output_latex_named_content(convert_action):
+    """Test that a named (assignment) symbolic latex output splits into the
+    variable name and the latex body.
+
+    The kernel emits named results as ``<name> =$...$`` (name before the first
+    ``$``), which must split on the first `` =`` separator.
+    """
+    # Arrange
+    output = {
+        "output_type": "execute_result",
+        "data": {"text/latex": "f =$\\displaystyle{}x^2 + 1$"},
+    }
+
+    # Act
+    result = convert_action._classify_output(output)
+
+    # Assert
+    assert result["outputData"]["name"] == "f"
+    assert result["outputData"]["value"] == "$\\displaystyle{}x^2 + 1$"
 
 
 def test_classify_output_image_png(convert_action):
@@ -700,7 +723,7 @@ def test_split_source_lines(convert_action, source, expected):
 def test_build_appendix_no_outputs(convert_action):
     """Test that appendix contains header and metadata when there are no outputs."""
     # Act
-    result = convert_action._build_appendix([])
+    result = convert_action._build_appendix([], [])
 
     # Assert
     joined = "\n".join(result)
@@ -721,7 +744,7 @@ def test_build_appendix_with_outputs(convert_action):
     ]
 
     # Act
-    result = convert_action._build_appendix(outputs_data)
+    result = convert_action._build_appendix(outputs_data, [])
 
     # Assert
     joined = "\n".join(result)
@@ -730,44 +753,33 @@ def test_build_appendix_with_outputs(convert_action):
     assert '"dataType":"text"' in joined
 
 
-@pytest.mark.parametrize(
-    "text,expected",
-    [
-        pytest.param("<div>hello</div>", "\\<div\\>hello\\</div\\>", id="html_tags"),
-        pytest.param("<br/>", "\\<br/\\>", id="self_closing_tag"),
-        pytest.param(
-            '<a href="url">link</a>',
-            '\\<a href="url"\\>link\\</a\\>',
-            id="tag_with_attributes",
+def test_build_appendix_with_media_entries(convert_action):
+    """Test that appendix includes media (image/video) sections built from
+    markdown conversion appendix entries."""
+    # Arrange
+    media_entries = [
+        (
+            "text:image",
+            "1abc",
+            {"align": "baseline", "height": 200, "src": "data:image/png;base64,AAAA"},
         ),
-        pytest.param("no tags here", "no tags here", id="no_tags"),
-        pytest.param("a < b > c", "a < b > c", id="non_tag_angle_brackets"),
-    ],
-)
-def test_escape_html_tags(text, expected):
-    """Test that HTML tags are escaped with backslashes."""
-    # Act & Assert
-    assert _escape_html_tags(text) == expected
+        (
+            "text:video",
+            "2def",
+            {"height": 315, "vidSrc": "https://youtube.com/embed/x", "width": 560},
+        ),
+    ]
 
+    # Act
+    result = convert_action._build_appendix([], media_entries)
 
-@pytest.mark.parametrize(
-    "text,expected",
-    [
-        pytest.param("<div>hi</div>", "\\<div\\>hi\\</div\\>", id="html_tags"),
-        pytest.param("---", "\\---", id="horizontal_rule_3_dashes"),
-        pytest.param("-----", "\\-----", id="horizontal_rule_5_dashes"),
-        pytest.param("> Block quote", "\\> Block quote", id="block_quote"),
-        pytest.param("  > Indented", "  \\> Indented", id="block_quote_indented"),
-        pytest.param("   >   HE", "   \\>   HE", id="block_quote_multiple_spaces"),
-        pytest.param("plain text", "plain text", id="no_escaping_needed"),
-        pytest.param("a - b - c", "a - b - c", id="dashes_not_horizontal_rule"),
-        pytest.param("->arrow", "->arrow", id="gt_not_at_start"),
-    ],
-)
-def test_escape_markdown_syntax(text, expected):
-    """Test that markdown syntax conflicting with rich .m format is escaped."""
-    # Act & Assert
-    assert _escape_markdown_syntax(text) == expected
+    # Assert
+    joined = "\n".join(result)
+    assert "%[text:image:1abc]" in joined
+    assert "%[text:video:2def]" in joined
+    # Slashes in the src/vidSrc must be escaped in the serialized data
+    assert "data:image\\/png;base64,AAAA" in joined
+    assert "https:\\/\\/youtube.com\\/embed\\/x" in joined
 
 
 def test_convert_notebook_markdown_cell_with_html(convert_action):

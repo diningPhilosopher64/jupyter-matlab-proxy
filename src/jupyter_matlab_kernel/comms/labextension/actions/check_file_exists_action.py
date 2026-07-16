@@ -52,7 +52,6 @@ class CheckFileExistsAction(ActionCommand):
         else:
             ipynb_filepath = Path(ipynb_filepath).expanduser()
             livecode_m_filepath = ipynb_filepath.parent / (ipynb_filepath.stem + ".m")
-           
 
             self.log.info(
                 f"LiveCode file at {livecode_m_filepath} exists: {livecode_m_filepath.exists()}"
