@@ -49,7 +49,7 @@ class MATLABKernelUsingMPM(base.BaseMATLABKernel):
             finally:
                 await self.cleanup_matlab_proxy()
 
-        return super().do_shutdown(restart)
+        return await super().do_shutdown(restart)
 
     # Helper functions
 
