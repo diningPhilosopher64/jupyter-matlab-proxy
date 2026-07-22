@@ -32,11 +32,20 @@ class EditAction(ActionCommand):
             raise Exception("Failed to parse response string from MATLAB")
 
     async def __wait_for_rootapp_instance_to_be_set(self):
-        getinstance_code = "matlab.ui.container.internal.RootApp.getInstance()"
+        # MATLAB try/catch so the trace never surfaces; on failure we report the
+        # instance as still initializing so the loop below simply retries until it is
+        # ready (or the timeout below fires), matching the pre-existing retry behavior.
+        getinstance_code = (
+            "try, "
+            "matlab.ui.container.internal.RootApp.getInstance(), "
+            "catch, "
+            "disp('  State: INITIALIZING'), "
+            "end"
+        )
         # Wait for the JSD to start loading before sending the root app instance.
         # If request is sent too early, any commands executed will have their outputs missing
         # TODO:Remove this sleep after the above bug is fixed.
-        self.log.debug(f"\n\n Waiting for 5 seconds before sending rootapp request")
+        self.log.debug(f"Waiting for 5 seconds before sending rootapp request")
         await asyncio.sleep(5)
 
         time_taken, time_out = 0, 30
@@ -55,8 +64,11 @@ class EditAction(ActionCommand):
                 )
 
                 if eval_response["isError"]:
-                    self.log.error(
-                        f"Error raised when checking client type :{eval_response['responseStr']}"
+                    # Transient during JSD startup; the loop retries until
+                    # the RootApp instance is ready. Logged at debug level to avoid alarming
+                    # users with an expected, self-healing condition.
+                    self.log.debug(
+                        f"RootApp instance not ready yet, retrying. Response: {eval_response['responseStr']}"
                     )
 
                 else:
