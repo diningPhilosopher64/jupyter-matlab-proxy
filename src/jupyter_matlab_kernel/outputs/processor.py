@@ -26,6 +26,7 @@ class OutputProcessor:
     def __init__(self, mwi_comm_helper=None, logger=None):
         self.mwi_comm_helper = mwi_comm_helper
         self.log = logger or _logger
+        self.figure_ids = set()
         self._handler_registry = {
             "matrix": self._handle_matrix,
             "variable": self._handle_variable,
@@ -41,6 +42,9 @@ class OutputProcessor:
 
     async def process(self, raw_outputs) -> AsyncGenerator[JupyterOutput, None]:
         """Process a stream of raw outputs, yielding JupyterOutput objects."""
+        # Clear figure ids before each processing
+        self.figure_ids.clear()
+
         async for out in raw_outputs:
             self.log.debug(f"Received output from MATLAB:\n{out}")
             if "type" not in out:
@@ -117,9 +121,13 @@ class OutputProcessor:
 
     def _handle_figure(self, output_data) -> JupyterOutput | None:
         if "figurePlaceHolderId" in output_data:
-            return FigurePlaceholderOutput(
-                display_id=output_data["figurePlaceHolderId"]
-            )
+            # MATLAB may send multiple placeholder outputs with the same figureId.
+            # We only need the first placeholder output to preserve the order and
+            # can discard the remaining placeholder outputs.
+            figure_id = output_data["figurePlaceHolderId"]
+            if figure_id not in self.figure_ids:
+                self.figure_ids.add(figure_id)
+                return FigurePlaceholderOutput(display_id=figure_id)
         elif "figureImage" in output_data:
             fid = output_data.get("figureId", "")
             return self._parse_figure_image(
