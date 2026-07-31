@@ -1,24 +1,25 @@
-// Copyright 2024-2025 The MathWorks, Inc.
+// Copyright 2024-2026 The MathWorks, Inc.
 
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import path from "path";
 
-const entryModule = "./src/parser.js";
+const here = import.meta.dirname;
+const entryModule = path.join(here, "src/parser.js");
 
 export default {
   input: entryModule,
   output: [
     {
       format: "cjs",
-      file: "./dist/index.cjs",
+      file: path.join(here, "dist/index.cjs"),
     },
     {
       format: "es",
-      file: "./dist/index.js",
+      file: path.join(here, "dist/index.js"),
     },
   ],
   external(id) {
-    if (id === path.resolve(entryModule)) {
+    if (id === entryModule) {
       return false;
     }
     return !/^[\.\/]/.test(id);
