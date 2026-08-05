@@ -44,7 +44,7 @@ class LabExtensionCommunication:
             self.log.error(
                 f"Received comm_msg for unknown comm_id: {comm_id}. Ignoring message."
             )
-            raise Exception(f"No Communcation channel available with comm_id {comm_id}")
+            return
 
         self.log.debug(
             f"Received action_type:{action_type} with data:{action_data} from the lab extension"

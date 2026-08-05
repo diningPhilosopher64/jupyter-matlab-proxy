@@ -150,8 +150,8 @@ describe('matlab utils', () => {
 
         // First call: not up, Second call: up (using matlabStatus not matlab.status)
         mockedMatlabStatusGet
-            .mockReturnValueOnce({ matlabStatus: 'starting' } as any)
-            .mockReturnValueOnce({ matlabStatus: 'up' } as any);
+            .mockReturnValueOnce({ matlabStatus: 'starting', processStartTimeout: 600 } as any)
+            .mockReturnValueOnce({ matlabStatus: 'up', processStartTimeout: 600 } as any);
 
         const notificationDelegate = {
             resolve: jest.fn(),
@@ -160,7 +160,7 @@ describe('matlab utils', () => {
 
         mockedDisplayStarting.mockReturnValue(notificationDelegate);
 
-        await waitForMatlabToStart(1, comm, panel, 100);
+        await waitForMatlabToStart(1, comm, panel);
 
         expect(statusAction.execute).toHaveBeenCalledTimes(2);
         expect(notificationDelegate.resolve).toHaveBeenCalled();
@@ -171,8 +171,9 @@ describe('matlab utils', () => {
         const statusAction = { execute: jest.fn().mockResolvedValue(undefined) };
         mockedCreateAction.mockReturnValue(statusAction);
 
-        // MATLAB never up
-        mockedMatlabStatusGet.mockReturnValue({ matlabStatus: 'starting' } as any);
+        // MATLAB never up. Tiny process start timeout (0.005s -> 5ms) so the test
+        // doesn't hang while still exercising the timeout-rejection path.
+        mockedMatlabStatusGet.mockReturnValue({ matlabStatus: 'starting', processStartTimeout: 0.005 } as any);
 
         const notificationDelegate = {
             resolve: jest.fn(),
@@ -181,8 +182,7 @@ describe('matlab utils', () => {
 
         mockedDisplayStarting.mockReturnValue(notificationDelegate);
 
-        // use tiny timeout so test doesn't hang
-        await waitForMatlabToStart(1, comm, panel, 5);
+        await waitForMatlabToStart(1, comm, panel);
 
         expect(notificationDelegate.reject).toHaveBeenCalled();
     });

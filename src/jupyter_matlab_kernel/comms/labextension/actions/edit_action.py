@@ -21,7 +21,7 @@ class EditAction(ActionCommand):
         Returns:
             str: MATLAB code which opens the MLX file in MATLAB.
         """
-        return f"edit('{mlx_file_path}'); clear ans;"
+        return f"edit('{mlx_file_path}');"
 
     def __check_if_rootapp_instance_is_set(self, string):
         match = re.search(r"^\s*State:\s*(\S+)", string, re.MULTILINE)
@@ -35,12 +35,17 @@ class EditAction(ActionCommand):
         # MATLAB try/catch so the trace never surfaces; on failure we report the
         # instance as still initializing so the loop below simply retries until it is
         # ready (or the timeout below fires), matching the pre-existing retry behavior.
+        # `getInstance()` is intentionally left unterminated so its display output
+        # (which carries the "State: RUNNING" line we parse) is emitted. `clear ans;`
+        # is placed after `end` so it always runs, even when `getInstance()` throws
+        # and control jumps to the catch block (MATLAB has no `finally`).
         getinstance_code = (
-            "try, "
-            "matlab.ui.container.internal.RootApp.getInstance(), "
-            "catch, "
-            "disp('  State: INITIALIZING'), "
-            "end"
+            "try\n"
+            "matlab.ui.container.internal.RootApp.getInstance()\n"
+            "catch\n"
+            "disp('State: INITIALIZING')\n"
+            "end\n"
+            "clear ans;"
         )
         # Wait for the JSD to start loading before sending the root app instance.
         # If request is sent too early, any commands executed will have their outputs missing
@@ -79,9 +84,7 @@ class EditAction(ActionCommand):
                         # Sleep for a second to ensure desktop state is confirmed.
                         break
                     else:
-                        self.log.info(
-                            "\n\nRoot app instance is initializing, retrying..."
-                        )
+                        self.log.info("Root app instance is initializing, retrying...")
 
             except Exception as err:
                 self.log.error(f"Edit action failed with error: {err}")

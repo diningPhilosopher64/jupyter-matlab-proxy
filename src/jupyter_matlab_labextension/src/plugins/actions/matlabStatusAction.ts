@@ -14,6 +14,7 @@ export type MATLABStatus = {
   licensingMode: string;
   matlabVersion: string;
   matlabRootPath: string;
+  processStartTimeout: number;
 };
 
 export class MatlabStatusAction extends BaseAction {

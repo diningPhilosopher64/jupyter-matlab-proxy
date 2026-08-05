@@ -26,6 +26,7 @@ class ActionFactory:
         EditAction,
         MatlabStatusAction,
         StartMatlabProxyAction,
+        CheckFileExistsAction,
         UnknownAction,
     ]:
         """Determines and returns the appropriate Action to use

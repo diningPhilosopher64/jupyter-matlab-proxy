@@ -125,10 +125,8 @@ async def test_comm_msg_with_valid_comm(
 
 
 @pytest.mark.asyncio
-async def test_comm_msg_raises_exception_for_unknown_comm_id(
-    labext_comm, mock_stream, mock_ident
-):
-    """Test that comm_msg raises exception when comm_id is not found."""
+async def test_comm_msg_ignores_unknown_comm_id(labext_comm, mock_stream, mock_ident):
+    """Test that comm_msg logs an error and returns when comm_id is not found."""
     # Arrange
     comm_id = "unknown-comm-id"
     msg = {
@@ -138,13 +136,10 @@ async def test_comm_msg_raises_exception_for_unknown_comm_id(
         }
     }
 
-    # Act & Assert
-    with pytest.raises(Exception) as exc_info:
-        await labext_comm.comm_msg(mock_stream, mock_ident, msg)
+    # Act
+    await labext_comm.comm_msg(mock_stream, mock_ident, msg)
 
-    assert f"No Communcation channel available with comm_id {comm_id}" in str(
-        exc_info.value
-    )
+    # Assert
     labext_comm.log.error.assert_called_once()
 
 

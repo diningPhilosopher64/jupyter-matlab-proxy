@@ -98,13 +98,13 @@ async def test_execute_returns_file_exists_status(
 ):
     """Test that execute returns correct exists status and logs debug message."""
     # Arrange
-    # Create test ipynb file and potentially a .mlx or .m file
+    # Create test ipynb file and potentially a .m file
     ipynb_file = tmp_path / "test_file.ipynb"
     ipynb_file.write_text("{}")
 
     if file_exists:
-        mlx_file = tmp_path / "test_file.mlx"
-        mlx_file.write_text("% test content")
+        m_file = tmp_path / "test_file.m"
+        m_file.write_text("% test content")
 
     data = {"ipynbFilePath": str(ipynb_file)}
 
@@ -124,12 +124,12 @@ async def test_execute_returns_file_exists_status(
 async def test_execute_handles_file_existence_check(
     check_file_exists_action, mock_comm, mocker, tmp_path
 ):
-    """Test that execute properly checks for .mlx or .m files."""
+    """Test that execute properly checks for .m files."""
     # Arrange
     ipynb_file = tmp_path / "test_file.ipynb"
     ipynb_file.write_text("{}")
-    mlx_file = tmp_path / "test_file.mlx"
-    mlx_file.write_text("% test")
+    m_file = tmp_path / "test_file.m"
+    m_file.write_text("% test")
 
     data = {"ipynbFilePath": str(ipynb_file)}
 

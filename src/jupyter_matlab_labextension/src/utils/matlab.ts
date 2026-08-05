@@ -40,8 +40,7 @@ export async function startMatlab (
 export async function waitForMatlabToStart (
     sleepInMS: number,
     comm: ICommunicationChannel,
-    notebook: NotebookPanel,
-    timeoutInMS: number = 600000 // Default timeout for MATLAB to start is 10 minutes
+    notebook: NotebookPanel
 ): Promise<void> {
     const matlabStatusAction = ActionFactory.createAction(
         ActionTypes.MATLAB_STATUS,
@@ -50,21 +49,28 @@ export async function waitForMatlabToStart (
     const matlabStartPromise = displayStartingMatlabNotification();
 
     let timeoutReached = false;
-
-    // Setup a timeout to reject the promise and return from this function
-    // if MATLAB does not start within the specified timeoutInMS
-    setTimeout(() => {
-        matlabStartPromise.reject(
-            new Error('Timed out waiting for MATLAB to start')
-        );
-        timeoutReached = true;
-    }, timeoutInMS);
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
     // eslint-disable-next-line no-unmodified-loop-condition
     while (!timeoutReached) {
         await matlabStatusAction.execute(null, comm);
         const status = MatlabStatusAction.getStatus();
+
+        // Arm the timeout once, using matlab-proxy's own configured process start
+        // timeout (MWI_PROCESS_START_TIMEOUT, reported in seconds). Fall back to
+        // 10 minutes if the status request failed to report a value.
+        if (timeoutId === undefined) {
+            const timeoutInMS = (status?.processStartTimeout ?? 600) * 1000;
+            timeoutId = setTimeout(() => {
+                matlabStartPromise.reject(
+                    new Error('Timed out waiting for MATLAB to start')
+                );
+                timeoutReached = true;
+            }, timeoutInMS);
+        }
+
         if (status.matlabStatus === 'up') {
+            clearTimeout(timeoutId);
             matlabStartPromise.resolve(null);
             break;
         }

@@ -8,6 +8,7 @@ from dataclasses import dataclass, asdict
 from typing import Optional
 
 import aiohttp
+from matlab_proxy import settings as mwi_settings
 from matlab_proxy.util.mwi.embedded_connector.helpers import (
     get_data_to_eval_mcode,
     get_data_to_feval_mcode,
@@ -40,6 +41,8 @@ class MATLABStatus:
         licensing_mode (str): The type of licensing being used. Defaults to an empty string.
         matlab_version (str): Version of the MATLAB instance. Defaults to an empty string.
         matlab_root_path (str): Root installation path of MATLAB. Defaults to an empty string.
+        process_start_timeout (int): Timeout in seconds that matlab-proxy allows for MATLAB
+            to start, as configured by MWI_PROCESS_START_TIMEOUT. Defaults to 600 seconds.
     """
 
     is_matlab_licensed: bool
@@ -48,6 +51,7 @@ class MATLABStatus:
     licensing_mode: str = ""
     matlab_version: str = ""
     matlab_root_path: str = ""
+    process_start_timeout: int = 600
 
     def snake_to_camel(self, s: str) -> str:
         parts = s.split("_")
@@ -84,6 +88,7 @@ class MWICommHelper:
         self._control_loop = control_loop
         self.headers = headers
         self.logger = logger
+        self.matlab_start_timeout = mwi_settings.get_process_startup_timeout()
 
     def _create_client_session(self):
         """Create a new client session with standard configuration"""
@@ -170,6 +175,7 @@ class MWICommHelper:
                     matlab_proxy_has_error=data.get("error") is not None,
                     licensing_mode=(data.get("licensing") or {}).get("type", ""),
                     matlab_version=matlab_data.get("version", ""),
+                    process_start_timeout=self.matlab_start_timeout,
                 )
             else:
                 self.logger.error(

@@ -25,14 +25,32 @@ export async function getNewFileNameDialog (
         });
 
         if (newNameResult.button.accept && newNameResult.value) {
+            // Drop any directory component so users can't write outside the
+            // folder via "sub/name", "../name", or "/abs/name".
+            let name = PathExt.basename(newNameResult.value.trim());
+
+            // Strip a known extension if they typed one despite the
+            // instruction (e.g. "name.txt" -> "name"). Only strip known
+            // extensions so legitimate dotted names ("my.data") are preserved.
+            const knownExtensions = ['.m', '.mlx', '.txt'];
+            const extension = PathExt.extname(name).toLowerCase();
+            if (knownExtensions.includes(extension)) {
+                name = PathExt.basename(name, PathExt.extname(name));
+            }
+
+            if (!name) {
+                // Input was only a path/extension (e.g. "report/" or ".m").
+                return null;
+            }
+
             console.debug(
                 'new file name is ',
-                newNameResult.value,
+                name,
                 ' currentfilename is ',
                 currentFileName
             );
 
-            return `${newNameResult.value}.mlx`;
+            return `${name}.m`;
         } else {
             // User cancelled, no need to proceed further
             return null;
@@ -43,7 +61,7 @@ export async function getNewFileNameDialog (
             currentFileName,
             PathExt.extname(currentFileName)
         );
-        return `${mlxFileNameWithoutExtension}.mlx`;
+        return `${mlxFileNameWithoutExtension}.m`;
     } else {
         return null; // User cancelled, no need to proceed further
     }
