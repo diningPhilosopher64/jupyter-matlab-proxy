@@ -42,7 +42,7 @@ def test_get_code_returns_edit_command(edit_action):
     result = edit_action.get_code("/path/to/file.mlx")
 
     # Assert
-    assert result == "edit('/path/to/file.mlx'); clear ans;"
+    assert result == "edit('/path/to/file.mlx');"
 
 
 def test_validate_data(edit_action):
