@@ -134,7 +134,7 @@ implements
      * This is a lightweight operation that only removes the reference without
      * closing or disposing the actual comm channel. Used when the comm is already
      * closed externally (e.g., by the kernel) and we just need to clean up our map.
-     * 
+     *
      * @param panelId - The ID of the notebook panel
      * @param comm - Optional comm channel to validate against (ensures we don't remove
      *               the wrong comm if it was already replaced)
@@ -157,7 +157,7 @@ implements
      * Unlike _removeCommForPanel, this method both removes the entry from the map
      * AND closes/disposes the actual comm channel to free up resources.
      * This prevents memory leaks and ensures clean shutdown of communication.
-     * 
+     *
      * @param panelId - The ID of the notebook panel whose comm should be disposed
      */
     private _disposeCommForPanel (panelId: string): void {
@@ -186,7 +186,7 @@ implements
      * Configures message handlers for a communication channel.
      * Sets up callbacks for incoming messages and close events from the kernel.
      * This centralizes the comm configuration logic that was previously inline.
-     * 
+     *
      * @param panel - The notebook panel associated with this comm
      * @param comm - The communication channel to configure
      */
@@ -220,7 +220,7 @@ implements
      * - If a valid comm already exists for this kernel, it returns early
      * - If the kernel has changed or no comm exists, it disposes the old one and creates new
      * - After async creation, it validates the panel/kernel are still valid before storing
-     * 
+     *
      * @param panel - The notebook panel to open comm for
      * @param kernel - The kernel connection to communicate with
      */
@@ -271,7 +271,7 @@ implements
      * Handles kernel change events for a notebook panel.
      * This is called whenever the kernel for a notebook changes (restart, new kernel, etc.).
      * It properly cleans up the old comm and establishes a new one with the new kernel.
-     * 
+     *
      * @param panel - The notebook panel whose kernel changed
      */
     private async _handleKernelChange (panel: NotebookPanel): Promise<void> {
@@ -299,13 +299,18 @@ implements
          * is being cleaned up (e.g., user closed the notebook tab while comm was opening).
          */
         let disposed = false;
-        
+
         /**
          * Handler for kernel change events. Using a named function allows us to
          * properly disconnect it during cleanup to prevent memory leaks.
          */
         const onKernelChanged = (): void => {
-            void this._handleKernelChange(panel);
+            this._handleKernelChange(panel).catch((error) => {
+                console.error(
+                    `Error handling kernel change for panel ${panel.id}:`,
+                    error
+                );
+            });
         };
 
         panel.sessionContext.ready
@@ -362,7 +367,7 @@ implements
     /**
      * Retrieves the communication channel for a notebook.
      * Validates that the channel exists and hasn't been disposed before returning.
-     * 
+     *
      * @param notebookId - The ID of the notebook
      * @returns The active communication channel
      * @throws Error if no active channel exists for the notebook

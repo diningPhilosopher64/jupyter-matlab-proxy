@@ -60,7 +60,7 @@
     "@jupyterlab/coreutils": "^6.0.0",
     "@jupyterlab/docregistry": "^4.0.0",
     "@jupyterlab/launcher": "^4.0.0",
-    "@jupyterlab/mainmenu": "4.3.4",
+    "@jupyterlab/mainmenu": "^4.3.4",
     "@jupyterlab/notebook": "^4.0.0",
     "@jupyterlab/ui-components": "^4.0.0",
     "@lezer/common": "^1.2.0",

@@ -3,8 +3,10 @@
 import { ConvertAction } from '../../../plugins/actions/convertAction';
 import { ActionTypes } from '../../../plugins/actions/actionTypes';
 import { ICommunicationChannel } from '../../../plugins/matlabCommunication';
-import { displayConversionNotification } from '../../../utils/notifications';
+import { displayConversionNotification, displayUnsupportedMatlabVersionNotification } from '../../../utils/notifications';
 import { PromiseDelegate } from '@lumino/coreutils';
+
+import { isCommValid } from '../../../plugins/actions/actionUtils';
 
 jest.mock('../../../utils/notifications', () => ({
     displayConversionNotification: jest.fn(),
@@ -14,9 +16,6 @@ jest.mock('../../../utils/notifications', () => ({
 jest.mock('../../../plugins/actions/actionUtils', () => ({
     isCommValid: jest.fn()
 }));
-
-import { isCommValid } from '../../../plugins/actions/actionUtils';
-import { displayUnsupportedMatlabVersionNotification } from '../../../utils/notifications';
 
 const mockedDisplayConversionNotification = displayConversionNotification as jest.MockedFunction<typeof displayConversionNotification>;
 const mockedDisplayUnsupportedMatlabVersionNotification = displayUnsupportedMatlabVersionNotification as jest.MockedFunction<typeof displayUnsupportedMatlabVersionNotification>;

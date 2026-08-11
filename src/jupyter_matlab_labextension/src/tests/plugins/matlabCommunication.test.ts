@@ -70,8 +70,8 @@ const createDeferred = (): {
     resolve: () => void;
 } => {
     let resolve!: () => void;
-    const promise = new Promise<void>((res) => {
-        resolve = res;
+    const promise = new Promise<void>((_resolve) => {
+        resolve = _resolve;
     });
     return { promise, resolve };
 };
